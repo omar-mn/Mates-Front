@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createRoom, getRooms } from '../api';
 
-function Home() {
+function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange }) {
   const token = localStorage.getItem('accessToken');
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +26,10 @@ function Home() {
       setHasNext(Boolean(data.next));
       setHasPrev(Boolean(data.previous));
       setPage(pageNumber);
+      onApiStatusChange('connected');
     } catch (err) {
       setError(err.message);
+      onApiStatusChange('error');
     } finally {
       setLoading(false);
     }
@@ -37,15 +39,32 @@ function Home() {
     loadRooms(1);
   }, []);
 
+  useEffect(() => {
+    if (refreshRoomsRequest > 0) {
+      loadRooms(page);
+    }
+  }, [refreshRoomsRequest]);
+
+  useEffect(() => {
+    if (createRoomRequest > 0) {
+      const modalEl = document.getElementById('createRoomModal');
+      if (modalEl && window.bootstrap) {
+        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    }
+  }, [createRoomRequest]);
+
   const filteredRooms = useMemo(() => {
     const text = search.toLowerCase();
     return rooms.filter((room) => {
       const name = (room.name || '').toLowerCase();
       const category = (room.category || '').toLowerCase();
       const description = (room.description || '').toLowerCase();
-      return name.includes(text) || category.includes(text) || description.includes(text);
+      const matchesSearch = name.includes(text) || category.includes(text) || description.includes(text);
+      const matchesCategory = selectedCategory ? category === selectedCategory.toLowerCase() : true;
+      return matchesSearch && matchesCategory;
     });
-  }, [rooms, search]);
+  }, [rooms, search, selectedCategory]);
 
   const submitCreateRoom = async (e) => {
     e.preventDefault();
@@ -59,6 +78,7 @@ function Home() {
       loadRooms(page);
     } catch (err) {
       setCreateError(err.message);
+      onApiStatusChange('error');
     } finally {
       setCreating(false);
     }
@@ -70,9 +90,12 @@ function Home() {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container-fluid py-4 px-3 px-lg-4">
       <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Rooms</h2>
+        <div>
+          <h2 className="mb-0">Rooms</h2>
+          {selectedCategory && <small className="text-secondary">Filtering by: {selectedCategory}</small>}
+        </div>
         <button className="btn btn-primary rounded-3" data-bs-toggle="modal" data-bs-target="#createRoomModal">
           Create Room
         </button>
@@ -96,25 +119,37 @@ function Home() {
       ) : (
         <div className="row g-3">
           {filteredRooms.map((room) => (
-            <div key={room.id} className="col-12 col-md-6 col-lg-4">
+            <div key={room.id} className="col-12 col-lg-6">
               <div className="card h-100 border-0 shadow-sm rounded-4">
                 <div className="card-body d-flex flex-column gap-2">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <h5 className="card-title mb-0">{room.name || 'Untitled Room'}</h5>
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <img
+                        src={room.owner?.profileImage || 'https://via.placeholder.com/32x32.png?text=U'}
+                        alt="owner"
+                        width="32"
+                        height="32"
+                        className="rounded-circle border"
+                      />
+                      <small className="fw-semibold">{room.owner?.username || 'Unknown owner'}</small>
+                    </div>
                     <div className="dropdown">
                       <button className="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown">⋮</button>
                       <ul className="dropdown-menu dropdown-menu-end">
                         <li>
                           <button className="dropdown-item" onClick={() => setRoomInfo(room)} data-bs-toggle="modal" data-bs-target="#roomInfoModal">
-                            Room Info
+                            Room info
                           </button>
                         </li>
                         <li><button className="dropdown-item" onClick={fakeCopyLink}>Copy link</button></li>
+                        <li><button className="dropdown-item" onClick={() => alert('More options coming soon!')}>Coming soon options</button></li>
                       </ul>
                     </div>
                   </div>
+
+                  <h5 className="card-title mb-0">{room.name || 'Untitled Room'}</h5>
                   <span className="badge text-bg-secondary d-inline-block">{room.category || 'General'}</span>
-                  <p className="text-secondary flex-grow-1 mb-2">{room.description || 'No description yet.'}</p>
+                  <p className="text-secondary flex-grow-1 mb-2">{(room.description || 'No description yet.').slice(0, 120)}{room.description?.length > 120 ? '...' : ''}</p>
                   <button className="btn btn-outline-primary rounded-3" onClick={() => alert('Join feature: Coming soon')}>
                     Join
                   </button>
@@ -175,6 +210,7 @@ function Home() {
             </div>
             <div className="modal-body">
               <h5>{roomInfo?.name || '-'}</h5>
+              <p className="mb-2"><strong>Owner:</strong> {roomInfo?.owner?.username || '-'}</p>
               <p className="mb-2"><strong>Category:</strong> {roomInfo?.category || '-'}</p>
               <p className="mb-0"><strong>Description:</strong> {roomInfo?.description || '-'}</p>
             </div>

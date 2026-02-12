@@ -1,27 +1,8 @@
-import type { Room } from '../api/rooms';
-
-export type NormalizedRoomsPage = {
-  rooms: Room[];
-  currentPage: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-  mode: 'server' | 'client';
-};
-
 const PAGE_SIZE = 10;
 
-type PaginatedRoomsResponse = {
-  count?: number;
-  next?: string | null;
-  previous?: string | null;
-  results?: Room[];
-};
-
-export const normalizeRoomsResponse = (
-  rawData: Room[] | PaginatedRoomsResponse,
-  requestedPage: number,
-): NormalizedRoomsPage => {
+// Normalizes room responses so the UI can always render one shape.
+// Some APIs return a simple array, others return { count, next, previous, results }.
+export const normalizeRoomsResponse = (rawData, requestedPage) => {
   if (Array.isArray(rawData)) {
     const totalPages = Math.max(1, Math.ceil(rawData.length / PAGE_SIZE));
     const boundedPage = Math.min(Math.max(requestedPage, 1), totalPages);

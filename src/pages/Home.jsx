@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listRooms, type Room } from '../api/rooms';
+import { listRooms } from '../api/rooms';
 import CreateRoomModal from '../components/CreateRoomModal';
 import Pagination from '../components/Pagination';
 import RoomCard from '../components/RoomCard';
 import RoomInfoModal from '../components/RoomInfoModal';
 import { RoomCardSkeleton } from '../components/Skeletons';
 import { useToast } from '../components/ToastProvider';
-import { normalizeRoomsResponse, type NormalizedRoomsPage } from '../utils/pagination';
+import { normalizeRoomsResponse } from '../utils/pagination';
 import { toFriendlyError } from '../utils/helpers';
 
-const emptyPage: NormalizedRoomsPage = {
+const emptyPage = {
   rooms: [],
   currentPage: 1,
   totalPages: 1,
@@ -19,12 +19,12 @@ const emptyPage: NormalizedRoomsPage = {
 };
 
 const Home = () => {
-  const [roomsPage, setRoomsPage] = useState<NormalizedRoomsPage>(emptyPage);
+  const [roomsPage, setRoomsPage] = useState(emptyPage);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const { pushToast } = useToast();
 
@@ -32,6 +32,7 @@ const Home = () => {
     try {
       setLoading(true);
       setError(null);
+      // Rooms API may send plain array or paginated object, normalize handles both.
       const data = await listRooms(requestedPage);
       const normalized = normalizeRoomsResponse(data, requestedPage);
       setRoomsPage(normalized);
@@ -112,6 +113,7 @@ const Home = () => {
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={async () => {
+          // After create, refresh first page so new room appears immediately.
           await loadRooms(1);
           pushToast('Rooms refreshed', 'info');
         }}

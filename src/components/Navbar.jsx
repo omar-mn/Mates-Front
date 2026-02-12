@@ -3,8 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
 import { cn } from '../utils/helpers';
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  cn('rounded-lg px-3 py-2 text-sm font-medium transition', isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200');
+const navLinkClass = ({ isActive }) => cn('rounded-lg px-3 py-2 text-sm font-medium transition', isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200');
 
 const Navbar = () => {
   const { accessToken, user, logout } = useAuth();
@@ -43,7 +42,7 @@ const Navbar = () => {
             <Link to="/login" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
               Login
             </Link>
-            <Link to="/register" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <Link to="/register" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white">
               Register
             </Link>
           </div>

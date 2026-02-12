@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listRooms, type Room } from '../api/rooms';
+import { listRooms } from '../api/rooms';
 import Avatar from '../components/Avatar';
 import { ProfileSkeleton } from '../components/Skeletons';
 import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
   const { user } = useAuth();
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
 
   useEffect(() => {

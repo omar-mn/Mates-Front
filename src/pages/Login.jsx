@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { loginUser } from '../api';
 
-function Login() {
-  const navigate = useNavigate();
+function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,7 +15,7 @@ function Login() {
 
     try {
       await loginUser(email, password);
-      navigate('/home');
+      onLoginSuccess();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -25,7 +24,7 @@ function Login() {
   };
 
   return (
-    <div className="container py-5" style={{ maxWidth: '520px' }}>
+    <div className="container py-5 auth-container">
       <div className="card border-0 shadow-sm rounded-4 p-4">
         <h2 className="mb-3">Login</h2>
         <p className="text-secondary mb-4">Sign in to continue.</p>

@@ -8,26 +8,27 @@ function SidebarContent({
   apiStatus,
   selectedCategory,
   onCategorySelect,
+  onLogout,
 }) {
   return (
     <>
       <div className="sidebar-section">
         <h6 className="sidebar-heading">Navigation</h6>
         <nav className="nav flex-column gap-1">
-          <NavLink to="/home" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>🏠 Home (Rooms)</NavLink>
-          <NavLink to="/profile" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>👤 Profile</NavLink>
-          <NavLink to="/updates" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>📰 Updates</NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>⚙️ Settings</NavLink>
-          <NavLink to="/help" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>❓ Help / FAQ</NavLink>
-          <NavLink to="/about" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>ℹ️ About</NavLink>
+          <NavLink to="/home" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-house" /> Home (Rooms)</NavLink>
+          <NavLink to="/profile" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-person" /> Profile</NavLink>
+          <NavLink to="/updates" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-megaphone" /> Updates</NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-gear" /> Settings</NavLink>
+          <NavLink to="/help" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-question-circle" /> Help</NavLink>
+          <NavLink to="/about" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}><i className="bi bi-info-circle" /> About</NavLink>
         </nav>
       </div>
 
       <div className="sidebar-section">
         <h6 className="sidebar-heading">Quick Actions</h6>
         <div className="d-grid gap-2">
-          <button className="btn btn-primary btn-sm" onClick={onCreateRoom}>Create Room</button>
-          <button className="btn btn-outline-secondary btn-sm" onClick={onRefreshRooms}>Refresh Rooms</button>
+          <button className="btn btn-primary btn-sm" onClick={onCreateRoom}><i className="bi bi-plus-circle" /> Create Room</button>
+          <button className="btn btn-outline-secondary btn-sm" onClick={onRefreshRooms}><i className="bi bi-arrow-clockwise" /> Refresh Rooms</button>
         </div>
       </div>
 
@@ -43,30 +44,13 @@ function SidebarContent({
               {category}
             </button>
           ))}
-          <button
-            className="btn btn-sm btn-link text-decoration-none px-1"
-            onClick={() => onCategorySelect('')}
-          >
-            Clear
-          </button>
+          <button className="btn btn-sm btn-link text-decoration-none px-1" onClick={() => onCategorySelect('')}>Clear</button>
         </div>
       </div>
 
       <div className="sidebar-section">
-        <h6 className="sidebar-heading">Pinned Rooms</h6>
-        <ul className="list-unstyled mb-0 d-grid gap-2 small">
-          <li className="pinned-item">🎮 Weekend Gamers</li>
-          <li className="pinned-item">💻 Frontend Friends</li>
-          <li className="pinned-item">🎵 Music Hangout</li>
-        </ul>
-      </div>
-
-      <div className="sidebar-section">
         <h6 className="sidebar-heading">Account</h6>
-        <nav className="nav flex-column gap-1">
-          <NavLink to="/profile" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>Profile</NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>Preferences</NavLink>
-        </nav>
+        <button className="sidebar-link sidebar-button" onClick={onLogout}><i className="bi bi-box-arrow-right" /> Logout</button>
       </div>
 
       <div className="mt-auto sidebar-footer small">

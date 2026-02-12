@@ -1,11 +1,4 @@
-# Mates Front (Beginner Friendly)
-
-This is a simplified React + Vite frontend with these pages:
-- Login
-- Register
-- Home (rooms list + create room)
-- Profile
-- Updates
+# Mates Front (React + Vite)
 
 ## Setup
 
@@ -27,12 +20,16 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 npm run dev
 ```
 
-## Dark mode
+## Quick project notes
 
-- Navbar has a **🌙 Dark Mode** toggle.
-- Theme value is saved in `localStorage` with key `theme` (`light` or `dark`).
-- Body gets class `theme-light` or `theme-dark`.
-- Styles are in `src/theme.css`.
+- **Theme location**: global dark-only theme styles are in `src/theme.css`.
+- **Auth protection**:
+  - Login stores token in `localStorage` key `accessToken`.
+  - Protected pages (`/home`, `/profile`, `/updates`, `/settings`) use a protected route wrapper.
+  - If there is no token, user is redirected to `/login`.
+- **Logout locations**:
+  - Sidebar → **Account** section → **Logout**
+  - Settings page (`/settings`) → **Logout** button
 
 ## API functions
 
@@ -42,5 +39,3 @@ All API calls are in `src/api.js`:
 - `getProfile`
 - `getRooms`
 - `createRoom`
-
-Token is saved in `localStorage` (`accessToken`, `refreshToken`) after login.

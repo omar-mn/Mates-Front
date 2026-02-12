@@ -1,5 +1,30 @@
+:root {
+  --bg: #0b0b0f;
+  --panel: #12121a;
+  --card: #161622;
+  --text: #e8e8f0;
+  --muted: #a0a0b5;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #a855f7;
+  --accent2: #7c3aed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: #c084fc;
 }
 
 .app-main {
@@ -12,14 +37,40 @@ body {
   }
 }
 
+.app-navbar {
+  background: var(--panel);
+  border-color: var(--border) !important;
+}
+
+.navbar-brand,
+.navbar .small {
+  color: var(--text) !important;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
 .app-sidebar {
   position: fixed;
   top: 65px;
   left: 0;
   width: 280px;
   height: calc(100vh - 65px);
-  border-right: 1px solid #dbe3ef;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
   z-index: 1020;
+}
+
+.app-sidebar-offcanvas,
+.offcanvas-header,
+.offcanvas-body,
+.offcanvas {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .app-sidebar-inner {
@@ -31,116 +82,166 @@ body {
   gap: 0.9rem;
 }
 
+.sidebar-section {
+  background: transparent;
+}
+
 .sidebar-heading {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04rem;
   margin-bottom: 0.45rem;
-  opacity: 0.8;
+  color: var(--muted);
 }
 
 .sidebar-link {
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.55rem;
+  border-left: 2px solid transparent;
   text-decoration: none;
-  color: inherit;
+  color: var(--text);
   font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.sidebar-button {
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.sidebar-link:hover,
+.sidebar-button:hover {
+  background: rgba(168, 85, 247, 0.14);
+  border-left-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.35);
 }
 
 .sidebar-link.active {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.pinned-item {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.55rem;
-  padding: 0.45rem 0.55rem;
+  background: rgba(168, 85, 247, 0.22);
+  border-left-color: var(--accent);
+  color: var(--text);
 }
 
 .sidebar-footer {
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  border-top: 1px solid var(--border);
   padding-top: 0.7rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-body.theme-light {
-  background: #f5f7fb;
-  color: #18222f;
+.auth-container {
+  max-width: 520px;
 }
 
-body.theme-light .app-navbar,
-body.theme-light .app-sidebar,
-body.theme-light .app-sidebar-offcanvas {
-  background: #ffffff;
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item,
+.page-link,
+.form-control,
+.form-select {
+  background-color: var(--card);
+  color: var(--text);
+  border-color: var(--border);
 }
 
-body.theme-dark {
-  background: #0f172a;
-  color: #e2e8f0;
+.text-secondary,
+small,
+.form-label {
+  color: var(--muted) !important;
 }
 
-body.theme-dark .app-navbar,
-body.theme-dark .app-sidebar,
-body.theme-dark .app-sidebar-offcanvas,
-body.theme-dark .offcanvas-header,
-body.theme-dark .offcanvas-body {
-  background: #111827;
-  border-color: #334155 !important;
-  color: #e2e8f0;
+.form-control::placeholder,
+textarea::placeholder {
+  color: var(--muted);
 }
 
-body.theme-dark .card,
-body.theme-dark .modal-content,
-body.theme-dark .dropdown-menu,
-body.theme-dark .list-group-item,
-body.theme-dark .page-link,
-body.theme-dark .form-control,
-body.theme-dark .offcanvas {
-  background-color: #1e293b;
-  color: #e2e8f0;
-  border-color: #334155;
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.25);
+  background: #1b1b29;
+  color: var(--text);
 }
 
-body.theme-dark .text-secondary,
-body.theme-dark .sidebar-heading {
-  color: #cbd5e1 !important;
+.btn {
+  border-radius: 0.55rem;
 }
 
-body.theme-dark .nav-link,
-body.theme-dark .navbar-brand,
-body.theme-dark .btn-close,
-body.theme-dark .modal-title,
-body.theme-dark .dropdown-item,
-body.theme-dark .sidebar-link {
-  color: #e2e8f0;
+.btn-primary {
+  background: var(--accent2);
+  border-color: var(--accent2);
 }
 
-body.theme-dark .dropdown-item:hover,
-body.theme-dark .sidebar-link:hover {
-  background: #334155;
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.25);
 }
 
-body.theme-dark .sidebar-link.active {
-  background: #2563eb;
-  color: #fff;
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-light {
+  color: var(--text);
+  border-color: var(--border);
+  background: transparent;
 }
 
-body.theme-dark .pinned-item,
-body.theme-dark .sidebar-footer {
-  border-color: #334155;
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-light:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(168, 85, 247, 0.14);
 }
 
-body.theme-dark .alert-info {
-  background-color: #0c4a6e;
-  color: #dbeafe;
-  border-color: #2563eb;
+.dropdown-item {
+  color: var(--text);
 }
 
-body.theme-dark .alert-warning {
-  background-color: #78350f;
-  color: #fef3c7;
-  border-color: #d97706;
+.dropdown-item:hover {
+  background: rgba(168, 85, 247, 0.14);
+  color: var(--text);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--border);
+}
+
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+.page-item.active .page-link {
+  background: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.page-link:hover {
+  background: rgba(168, 85, 247, 0.14);
+  color: var(--text);
+}
+
+.alert-info,
+.alert-warning,
+.alert-success,
+.alert-danger {
+  border-color: var(--border);
+}
+
+.btn-close {
+  filter: invert(1);
 }

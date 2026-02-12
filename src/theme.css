@@ -52,7 +52,7 @@ a:hover {
 .app-navbar {
   background: var(--panel);
   border-color: var(--border) !important;
-  backdrop-filter: blur(14px);
+  /* backdrop-filter: blur(14px); */
 }
 
 .navbar-brand,
@@ -74,7 +74,7 @@ a:hover {
   height: calc(100vh - 65px);
   border-right: 1px solid var(--border);
   background: var(--panel);
-  backdrop-filter: blur(18px);
+  /* backdrop-filter: blur(18px); */
   z-index: 1020;
 }
 
@@ -85,7 +85,7 @@ a:hover {
   background: var(--panel);
   color: var(--text);
   border-color: var(--border);
-  backdrop-filter: blur(18px);
+  /* backdrop-filter: blur(18px); */
 }
 
 .app-sidebar-inner {
@@ -163,7 +163,7 @@ a:hover {
   background-color: var(--card);
   color: var(--text);
   border-color: var(--border);
-  backdrop-filter: blur(14px);
+  /* backdrop-filter: blur(14px); */
 }
 
 .text-secondary,

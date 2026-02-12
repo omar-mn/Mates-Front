@@ -44,7 +44,6 @@ function SidebarContent({
               {category}
             </button>
           ))}
-          <button className="btn btn-sm btn-link text-decoration-none px-1" onClick={() => onCategorySelect('')}>Clear</button>
         </div>
       </div>
 

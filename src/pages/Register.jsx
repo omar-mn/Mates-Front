@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../api';
 
-function Register() {
+function Register({ showToast }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,10 +18,13 @@ function Register() {
 
     try {
       await registerUser(email, password);
-      setSuccess('Account created! You can now login.');
+      const successMessage = 'Account created! You can now login.';
+      setSuccess(successMessage);
+      showToast?.(successMessage, 'success');
       setTimeout(() => navigate('/login'), 900);
     } catch (err) {
       setError(err.message);
+      showToast?.(err.message || 'Register failed', 'danger');
     } finally {
       setLoading(false);
     }

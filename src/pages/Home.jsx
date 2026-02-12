@@ -1,38 +1,87 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createRoom, getRooms } from '../api';
 
-function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange }) {
+const ROOMS_PER_PAGE = 10;
+
+function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast }) {
   const token = localStorage.getItem('accessToken');
   const [rooms, setRooms] = useState([]);
+  const [allRooms, setAllRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
-  const [hasPrev, setHasPrev] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [nextUrl, setNextUrl] = useState(null);
+  const [prevUrl, setPrevUrl] = useState(null);
+  const [isServerPagination, setIsServerPagination] = useState(false);
   const [roomInfo, setRoomInfo] = useState(null);
 
   const [newRoom, setNewRoom] = useState({ name: '', category: '', description: '' });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
-  const loadRooms = async (pageNumber) => {
+  const totalClientPages = Math.max(1, Math.ceil(allRooms.length / ROOMS_PER_PAGE));
+
+  const parsePageFromUrl = (url) => {
+    if (!url) return null;
+    try {
+      return Number(new window.URL(url).searchParams.get('page')) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const loadRooms = async (pageOrUrl = 1, direction = null) => {
     setError('');
     setLoading(true);
 
     try {
-      const data = await getRooms(token, pageNumber);
-      setRooms(data.rooms || []);
-      setHasNext(Boolean(data.next));
-      setHasPrev(Boolean(data.previous));
-      setPage(pageNumber);
+      const data = await getRooms(token, pageOrUrl);
+
+      // Response-shape detection for robust pagination:
+      // 1) DRF pagination object => use data.rooms + data.next/data.previous from backend.
+      // 2) Plain array => switch to local client-side pagination with slice(...).
+      if (data.isPaginated) {
+        setIsServerPagination(true);
+        setRooms(data.rooms || []);
+        setNextUrl(data.next);
+        setPrevUrl(data.previous);
+
+        if (typeof pageOrUrl === 'number') {
+          setCurrentPage(pageOrUrl);
+        } else if (direction === 'next') {
+          setCurrentPage((prev) => prev + 1);
+        } else if (direction === 'prev') {
+          setCurrentPage((prev) => Math.max(1, prev - 1));
+        } else {
+          setCurrentPage(parsePageFromUrl(pageOrUrl) || 1);
+        }
+      } else {
+        setIsServerPagination(false);
+        const fullList = data.rooms || [];
+        const requestedPage = typeof pageOrUrl === 'number' ? pageOrUrl : 1;
+        const safePage = Math.min(Math.max(1, requestedPage), Math.max(1, Math.ceil(fullList.length / ROOMS_PER_PAGE)));
+        setAllRooms(fullList);
+        setCurrentPage(safePage);
+        setRooms(fullList.slice((safePage - 1) * ROOMS_PER_PAGE, safePage * ROOMS_PER_PAGE));
+        setNextUrl(null);
+        setPrevUrl(null);
+      }
+
       onApiStatusChange('connected');
     } catch (err) {
       setError(err.message);
       onApiStatusChange('error');
+      showToast?.(err.message || 'Failed to load rooms', 'danger');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadClientPage = (targetPage) => {
+    const safePage = Math.min(Math.max(1, targetPage), totalClientPages);
+    setCurrentPage(safePage);
+    setRooms(allRooms.slice((safePage - 1) * ROOMS_PER_PAGE, safePage * ROOMS_PER_PAGE));
   };
 
   useEffect(() => {
@@ -41,9 +90,19 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
 
   useEffect(() => {
     if (refreshRoomsRequest > 0) {
-      loadRooms(page);
+      if (isServerPagination) {
+        loadRooms(currentPage);
+      } else {
+        loadRooms(1);
+      }
     }
   }, [refreshRoomsRequest]);
+
+  useEffect(() => {
+    if (!isServerPagination && allRooms.length) {
+      loadClientPage(currentPage);
+    }
+  }, [allRooms, currentPage, isServerPagination]);
 
   useEffect(() => {
     if (createRoomRequest > 0) {
@@ -75,18 +134,28 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
       await createRoom(token, newRoom);
       setNewRoom({ name: '', category: '', description: '' });
       window.bootstrap.Modal.getOrCreateInstance(document.getElementById('createRoomModal')).hide();
-      loadRooms(page);
+      showToast?.('Room created successfully.', 'success');
+      if (isServerPagination) {
+        loadRooms(currentPage);
+      } else {
+        loadRooms(1);
+      }
     } catch (err) {
       setCreateError(err.message);
       onApiStatusChange('error');
+      showToast?.(err.message || 'Failed to create room', 'danger');
     } finally {
       setCreating(false);
     }
   };
 
-  const fakeCopyLink = () => {
-    navigator.clipboard.writeText('https://mates-room-link.example/coming-soon');
-    alert('Room link copied (fake link for now).');
+  const fakeCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText('https://mates-room-link.example/coming-soon');
+      showToast?.('Room link copied (fake link for now).', 'success');
+    } catch {
+      showToast?.('Could not copy room link.', 'danger');
+    }
   };
 
   const hasArabicText = (value = '') => /[\u0600-\u06FF]/.test(value);
@@ -112,7 +181,12 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
         />
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="alert alert-danger d-flex justify-content-between align-items-center gap-3" role="alert">
+          <span>{error}</span>
+          <button className="btn btn-sm btn-outline-light" onClick={() => loadRooms(isServerPagination ? currentPage : 1)}>Retry</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-5">
@@ -135,7 +209,7 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                           </button>
                         </li>
                         <li><button className="dropdown-item" onClick={fakeCopyLink}>Copy link</button></li>
-                        <li><button className="dropdown-item" onClick={() => alert('More options coming soon!')}>Coming soon options</button></li>
+                        <li><button className="dropdown-item" onClick={() => showToast?.('More options coming soon!', 'info')}>Coming soon options</button></li>
                       </ul>
                     </div>
                   </div>
@@ -162,7 +236,7 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                   </p>
 
                   <div className="room-footer">
-                    <button className="btn btn-outline-primary rounded-3 px-4" onClick={() => alert('Join feature: Coming soon')}>
+                    <button className="btn btn-outline-primary rounded-3 px-4" onClick={() => showToast?.('Join feature: Coming soon', 'info')}>
                       Join
                     </button>
                   </div>
@@ -181,12 +255,35 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
 
       <nav className="mt-4">
         <ul className="pagination justify-content-center">
-          <li className={`page-item ${!hasPrev ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => hasPrev && loadRooms(page - 1)}>Previous</button>
+          <li className={`page-item ${isServerPagination ? (!prevUrl ? 'disabled' : '') : (currentPage <= 1 ? 'disabled' : '')}`}>
+            <button
+              className="page-link"
+              onClick={() => {
+                if (isServerPagination) {
+                  if (prevUrl) loadRooms(prevUrl, 'prev');
+                } else if (currentPage > 1) {
+                  loadClientPage(currentPage - 1);
+                }
+              }}
+            >
+              Previous
+            </button>
           </li>
-          <li className="page-item active"><span className="page-link">{page}</span></li>
-          <li className={`page-item ${!hasNext ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => hasNext && loadRooms(page + 1)}>Next</button>
+          <li className="page-item active"><span className="page-link">{currentPage}</span></li>
+          {!isServerPagination && <li className="page-item"><span className="page-link">/ {totalClientPages}</span></li>}
+          <li className={`page-item ${isServerPagination ? (!nextUrl ? 'disabled' : '') : (currentPage >= totalClientPages ? 'disabled' : '')}`}>
+            <button
+              className="page-link"
+              onClick={() => {
+                if (isServerPagination) {
+                  if (nextUrl) loadRooms(nextUrl, 'next');
+                } else if (currentPage < totalClientPages) {
+                  loadClientPage(currentPage + 1);
+                }
+              }}
+            >
+              Next
+            </button>
           </li>
         </ul>
       </nav>

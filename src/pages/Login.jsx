@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { loginUser } from '../api';
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, showToast }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,9 +15,11 @@ function Login({ onLoginSuccess }) {
 
     try {
       await loginUser(email, password);
+      showToast?.('Login successful. Welcome back!', 'success');
       onLoginSuccess();
     } catch (err) {
       setError(err.message);
+      showToast?.(err.message || 'Login failed', 'danger');
     } finally {
       setLoading(false);
     }

@@ -387,3 +387,27 @@ textarea::placeholder {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(176, 109, 255, 0.75);
 }
+
+.toast-host {
+  z-index: 1080;
+}
+
+.toast-custom {
+  min-width: 280px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.toast-accent-success {
+  border-left: 4px solid #19c37d;
+}
+
+.toast-accent-danger {
+  border-left: 4px solid #ef476f;
+}
+
+.toast-accent-info {
+  border-left: 4px solid #4dabf7;
+}

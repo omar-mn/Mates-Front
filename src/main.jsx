@@ -6,7 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/ToastProvider';
 import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <ToastProvider>

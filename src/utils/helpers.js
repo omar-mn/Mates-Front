@@ -1,6 +1,6 @@
-export const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
+export const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-export const getInitials = (name?: string, fallback = 'U') => {
+export const getInitials = (name, fallback = 'U') => {
   if (!name) return fallback;
   return name
     .split(' ')
@@ -10,12 +10,12 @@ export const getInitials = (name?: string, fallback = 'U') => {
     .join('');
 };
 
-export const toFriendlyError = (error: unknown, defaultMessage: string) => {
+export const toFriendlyError = (error, defaultMessage) => {
   if (typeof error === 'object' && error !== null && 'response' in error) {
-    const response = (error as { response?: { data?: unknown } }).response;
+    const response = error.response;
     if (typeof response?.data === 'string') return response.data;
     if (typeof response?.data === 'object' && response.data !== null) {
-      const message = Object.values(response.data as Record<string, unknown>).flat()[0];
+      const message = Object.values(response.data).flat()[0];
       if (typeof message === 'string') return message;
     }
   }

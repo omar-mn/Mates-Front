@@ -5,24 +5,18 @@ import { useToast } from './ToastProvider';
 
 const categories = ['games', 'general', 'tech', 'music', 'sports'];
 
-type CreateRoomModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreated: () => Promise<void>;
-};
-
-const CreateRoomModal = ({ isOpen, onClose, onCreated }: CreateRoomModalProps) => {
+const CreateRoomModal = ({ isOpen, onClose, onCreated }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState(categories[0]);
   const [description, setDescription] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { pushToast } = useToast();
 
   if (!isOpen) return null;
 
   const validate = () => {
-    const nextErrors: Record<string, string> = {};
+    const nextErrors = {};
     if (name.trim().length < 3) {
       nextErrors.name = 'Name must be at least 3 characters.';
     }
@@ -40,12 +34,13 @@ const CreateRoomModal = ({ isOpen, onClose, onCreated }: CreateRoomModalProps) =
     setErrors({});
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validate()) return;
 
     try {
       setIsSubmitting(true);
+      // Sends room payload to API. Home page then reloads room list to include the new room.
       await createRoom({
         name: name.trim(),
         category,

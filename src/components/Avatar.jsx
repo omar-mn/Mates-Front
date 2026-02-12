@@ -1,14 +1,7 @@
 import { useState } from 'react';
 import { cn, getInitials } from '../utils/helpers';
 
-type AvatarProps = {
-  src?: string | null;
-  alt: string;
-  fallbackText?: string;
-  className?: string;
-};
-
-const Avatar = ({ src, alt, fallbackText, className }: AvatarProps) => {
+const Avatar = ({ src, alt, fallbackText, className }) => {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {

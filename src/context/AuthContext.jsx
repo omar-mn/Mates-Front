@@ -1,26 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { setClientToken } from '../api/client';
-import { fetchUserInfo, loginUser, type UserData } from '../api/auth';
+import { fetchUserInfo, loginUser } from '../api/auth';
 import { useToast } from '../components/ToastProvider';
 import { toFriendlyError } from '../utils/helpers';
 
-type AuthContextValue = {
-  accessToken: string | null;
-  user: UserData | null;
-  isBootstrapping: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshUser: () => Promise<void>;
-};
-
 const STORAGE_KEY = 'accessToken';
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [accessToken, setAccessToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
-  const [user, setUser] = useState<UserData | null>(null);
+export const AuthProvider = ({ children }) => {
+  const [accessToken, setAccessToken] = useState(() => localStorage.getItem(STORAGE_KEY));
+  const [user, setUser] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const navigate = useNavigate();
   const { pushToast } = useToast();
@@ -34,12 +25,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [navigate]);
 
   const refreshUser = useCallback(async () => {
+    // After we have a token, fetch current user profile from /api/users/info/.
     const userInfo = await fetchUserInfo();
     setUser(userInfo);
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email, password) => {
+      // Login returns access/refresh token pair.
+      // We keep accessToken in localStorage so session persists after page reloads.
       const tokens = await loginUser({ email, password });
       localStorage.setItem(STORAGE_KEY, tokens.access);
       setAccessToken(tokens.access);
@@ -56,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [accessToken]);
 
   useEffect(() => {
+    // Request interceptor guarantees Authorization header is attached on every request.
     const requestInterceptor = apiClient.interceptors.request.use((config) => {
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
@@ -63,6 +58,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return config;
     });
 
+    // Response interceptor centralizes expired-session handling.
+    // If backend returns 401, we log user out and redirect to login.
     const responseInterceptor = apiClient.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -87,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       try {
+        // App startup auth restore flow: token from localStorage -> fetch /api/users/info/.
         await refreshUser();
       } catch (error) {
         pushToast(toFriendlyError(error, 'Unable to restore session'), 'error');

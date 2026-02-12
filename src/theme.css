@@ -260,9 +260,19 @@ textarea::placeholder {
 }
 
 .room-title {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.01em;
+}
+
+.room-owner-row {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.room-owner-row img {
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .room-meta {
@@ -293,15 +303,21 @@ textarea::placeholder {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.45;
-  min-height: calc(1.45em * 3);
+  line-height: 1.8;
+  min-height: calc(1.8em * 3);
 }
 
 .room-footer {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   padding-top: 0.35rem;
+}
+
+.rtl-text {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: plaintext;
 }
 
 .room-info-modal .modal-content {

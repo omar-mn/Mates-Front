@@ -120,10 +120,10 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
         <div className="row g-3">
           {filteredRooms.map((room) => (
             <div key={room.id} className="col-12 col-lg-6">
-              <div className="card h-100 border-0 shadow-sm rounded-4">
-                <div className="card-body d-flex flex-column gap-2">
+              <div className="card room-card h-100 border-0 shadow-sm rounded-4">
+                <div className="card-body d-flex flex-column gap-3">
                   <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="room-owner d-flex align-items-center gap-2">
                       <img
                         src={room.owner?.profileImage || 'https://via.placeholder.com/32x32.png?text=U'}
                         alt="owner"
@@ -147,12 +147,21 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                     </div>
                   </div>
 
-                  <h5 className="card-title mb-0">{room.name || 'Untitled Room'}</h5>
-                  <span className="badge text-bg-secondary d-inline-block">{room.category || 'General'}</span>
-                  <p className="text-secondary flex-grow-1 mb-2">{(room.description || 'No description yet.').slice(0, 120)}{room.description?.length > 120 ? '...' : ''}</p>
-                  <button className="btn btn-outline-primary rounded-3" onClick={() => alert('Join feature: Coming soon')}>
-                    Join
-                  </button>
+                  <h5 className="room-title mb-0">{room.name || 'Untitled Room'}</h5>
+
+                  <div className="room-meta d-flex align-items-center gap-2">
+                    <span className="room-category-pill">{room.category || 'General'}</span>
+                    <span className="room-meta-dot" aria-hidden="true">•</span>
+                    <small className="text-secondary">Active room</small>
+                  </div>
+
+                  <p className="room-desc text-secondary flex-grow-1 mb-0">{room.description || 'No description yet.'}</p>
+
+                  <div className="room-footer">
+                    <button className="btn btn-outline-primary rounded-3 px-4" onClick={() => alert('Join feature: Coming soon')}>
+                      Join
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -201,18 +210,56 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
         </div>
       </div>
 
-      <div className="modal fade" id="roomInfoModal" tabIndex="-1" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
+      <div className="modal fade room-info-modal" id="roomInfoModal" tabIndex="-1" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered modal-lg">
           <div className="modal-content rounded-4">
             <div className="modal-header">
-              <h5 className="modal-title">Room Info</h5>
+              <div>
+                <h5 className="modal-title mb-0">Room Info</h5>
+                <small className="text-secondary">{roomInfo?.name || 'Selected room details'}</small>
+              </div>
               <button className="btn-close" data-bs-dismiss="modal" />
             </div>
-            <div className="modal-body">
-              <h5>{roomInfo?.name || '-'}</h5>
-              <p className="mb-2"><strong>Owner:</strong> {roomInfo?.owner?.username || '-'}</p>
-              <p className="mb-2"><strong>Category:</strong> {roomInfo?.category || '-'}</p>
-              <p className="mb-0"><strong>Description:</strong> {roomInfo?.description || '-'}</p>
+            <div className="modal-body d-grid gap-3">
+              <div className="info-card">
+                <div className="row g-3 align-items-center">
+                  <div className="col-md-8">
+                    <div className="info-section">
+                      <p className="info-label mb-1"><i className="bi bi-chat-dots me-2" />Name</p>
+                      <p className="info-value mb-0">{roomInfo?.name || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="info-section">
+                      <p className="info-label mb-1"><i className="bi bi-tag me-2" />Category</p>
+                      <span className="room-category-pill">{roomInfo?.category || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-card">
+                <div className="info-section">
+                  <p className="info-label mb-2"><i className="bi bi-person me-2" />Owner</p>
+                  <div className="d-flex align-items-center gap-3">
+                    <img
+                      src={roomInfo?.owner?.profileImage || 'https://via.placeholder.com/40x40.png?text=U'}
+                      alt="owner"
+                      width="40"
+                      height="40"
+                      className="rounded-circle border"
+                    />
+                    <p className="info-value mb-0">{roomInfo?.owner?.username || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-card">
+                <div className="info-section">
+                  <p className="info-label mb-2"><i className="bi bi-card-text me-2" />Description</p>
+                  <p className="info-value mb-0">{roomInfo?.description || '-'}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

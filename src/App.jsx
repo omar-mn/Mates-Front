@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { getProfile } from './api';
 import AppNavbar from './components/AppNavbar';
@@ -10,6 +10,7 @@ import Profile from './pages/Profile';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import Updates from './pages/Updates';
+import ToastHost from './components/ToastHost';
 
 function ProtectedRoute({ isLoggedIn, children }) {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
@@ -24,8 +25,23 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [createRoomRequest, setCreateRoomRequest] = useState(0);
   const [refreshRoomsRequest, setRefreshRoomsRequest] = useState(0);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const toastTimerRef = useRef(null);
 
   const isLoggedIn = Boolean(token);
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 2500);
+  };
+
+
+  useEffect(() => () => {
+    window.clearTimeout(toastTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -92,8 +108,8 @@ function App() {
       <main className={isLoggedIn ? 'app-main with-sidebar' : 'app-main'}>
         <Routes>
           <Route path="/" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
-          <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} />} />
-          <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <Register />} />
+          <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} showToast={showToast} />} />
+          <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <Register showToast={showToast} />} />
           <Route
             path="/home"
             element={(
@@ -103,6 +119,7 @@ function App() {
                   createRoomRequest={createRoomRequest}
                   refreshRoomsRequest={refreshRoomsRequest}
                   onApiStatusChange={setApiStatus}
+                  showToast={showToast}
                 />
               </ProtectedRoute>
             )}
@@ -124,6 +141,7 @@ function App() {
           <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
         </Routes>
       </main>
+      <ToastHost toast={toast} />
     </>
   );
 }

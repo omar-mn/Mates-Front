@@ -54,9 +54,12 @@ export async function getProfile(token) {
   return response.json();
 }
 
-export async function getRooms(token, page = 1) {
-  // We call GET /api/rooms/?page=... to load room list; auth header is attached directly here (no interceptors).
-  const response = await fetch(`${API_BASE_URL}/api/rooms/?page=${page}`, {
+export async function getRooms(token, pageOrUrl = 1) {
+  // If `pageOrUrl` is already an absolute URL from DRF `next`/`previous`, use it directly.
+  // Otherwise we build the normal /api/rooms/?page=... endpoint URL.
+  const endpoint = typeof pageOrUrl === 'string' ? pageOrUrl : `${API_BASE_URL}/api/rooms/?page=${pageOrUrl}`;
+
+  const response = await fetch(endpoint, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -71,12 +74,12 @@ export async function getRooms(token, page = 1) {
   const data = await response.json();
 
   if (Array.isArray(data)) {
-    // If API returns a plain array, we still normalize it so pages can update state in one format.
     return {
       rooms: data,
       next: null,
       previous: null,
       count: data.length,
+      isPaginated: false,
     };
   }
 
@@ -85,6 +88,7 @@ export async function getRooms(token, page = 1) {
     next: data.next || null,
     previous: data.previous || null,
     count: data.count || 0,
+    isPaginated: true,
   };
 }
 

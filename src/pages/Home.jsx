@@ -89,6 +89,8 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
     alert('Room link copied (fake link for now).');
   };
 
+  const hasArabicText = (value = '') => /[\u0600-\u06FF]/.test(value);
+
   return (
     <div className="container-fluid py-4 px-3 px-lg-4">
       <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
@@ -123,16 +125,7 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
               <div className="card room-card h-100 border-0 shadow-sm rounded-4">
                 <div className="card-body d-flex flex-column gap-3">
                   <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div className="room-owner d-flex align-items-center gap-2">
-                      <img
-                        src={room.owner?.profileImage || 'https://via.placeholder.com/32x32.png?text=U'}
-                        alt="owner"
-                        width="32"
-                        height="32"
-                        className="rounded-circle border"
-                      />
-                      <small className="fw-semibold">{room.owner?.username || 'Unknown owner'}</small>
-                    </div>
+                    <h5 className="room-title mb-0">{room.name || 'Untitled Room'}</h5>
                     <div className="dropdown">
                       <button className="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i className="bi bi-three-dots-vertical" /></button>
                       <ul className="dropdown-menu dropdown-menu-end">
@@ -147,7 +140,16 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                     </div>
                   </div>
 
-                  <h5 className="room-title mb-0">{room.name || 'Untitled Room'}</h5>
+                  <div className="room-owner-row d-flex align-items-center gap-2">
+                    <img
+                      src={room.owner?.profileImage || 'https://via.placeholder.com/32x32.png?text=U'}
+                      alt="owner"
+                      width="32"
+                      height="32"
+                      className="rounded-circle border"
+                    />
+                    <small className="fw-semibold">{room.owner?.username || 'Unknown owner'}</small>
+                  </div>
 
                   <div className="room-meta d-flex align-items-center gap-2">
                     <span className="room-category-pill">{room.category || 'General'}</span>
@@ -155,7 +157,9 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                     <small className="text-secondary">Active room</small>
                   </div>
 
-                  <p className="room-desc text-secondary flex-grow-1 mb-0">{room.description || 'No description yet.'}</p>
+                  <p className={`room-desc text-secondary flex-grow-1 mb-0 ${hasArabicText(room.description) ? 'rtl-text' : ''}`}>
+                    {room.description || 'No description yet.'}
+                  </p>
 
                   <div className="room-footer">
                     <button className="btn btn-outline-primary rounded-3 px-4" onClick={() => alert('Join feature: Coming soon')}>

@@ -1,76 +1,93 @@
-import { useEffect, useMemo, useState } from 'react';
-import { listRooms } from '../api/rooms';
-import Avatar from '../components/Avatar';
-import { ProfileSkeleton } from '../components/Skeletons';
-import { useAuth } from '../context/AuthContext';
+import { useEffect, useState } from 'react';
+import { getProfile, getRooms } from '../api';
 
-const Profile = () => {
-  const { user } = useAuth();
-  const [rooms, setRooms] = useState([]);
-  const [loadingRooms, setLoadingRooms] = useState(true);
+function Profile() {
+  const token = localStorage.getItem('accessToken');
+  const [profile, setProfile] = useState(null);
+  const [myRooms, setMyRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const run = async () => {
+    const loadData = async () => {
+      setLoading(true);
+      setError('');
+
       try {
-        setLoadingRooms(true);
-        const data = await listRooms(1);
-        setRooms(Array.isArray(data) ? data : data.results ?? []);
+        const profileData = await getProfile(token);
+        const userData = profileData.userData || {};
+        setProfile(userData);
+
+        const roomsData = await getRooms(token, 1);
+        const mine = (roomsData.rooms || []).filter((room) => room.owner?.username === userData.username);
+        setMyRooms(mine);
+      } catch (err) {
+        setError(err.message);
       } finally {
-        setLoadingRooms(false);
+        setLoading(false);
       }
     };
 
-    void run();
+    loadData();
   }, []);
 
-  const myRooms = useMemo(() => {
-    if (!user) return [];
-    return rooms.filter((room) => room.owner.username === user.username);
-  }, [rooms, user]);
-
-  if (!user) {
-    return <div className="mx-auto max-w-6xl p-4">Unable to load profile.</div>;
+  if (loading) {
+    return (
+      <div className="container py-5 text-center">
+        <div className="spinner-border" />
+      </div>
+    );
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6">
-      <section className="rounded-2xl bg-white p-6 shadow-soft">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <Avatar src={user.profileImage} alt={user.username} fallbackText={user.username} className="h-20 w-20 text-lg" />
+    <div className="container py-4">
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div className="d-flex align-items-center gap-3">
+          <img
+            src={profile?.profileImage || 'https://via.placeholder.com/80x80.png?text=User'}
+            alt="profile"
+            width="80"
+            height="80"
+            className="rounded-circle border"
+          />
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{user.username}</h1>
-            <p className="text-slate-600">{user.email}</p>
-            <p className="mt-2 text-sm text-slate-500">
-              First name: {user.first_name ?? '—'} | Last name: {user.last_name ?? '—'}
-            </p>
+            <h4 className="mb-1">{profile?.username || 'No username'}</h4>
+            <p className="mb-1 text-secondary">{profile?.email}</p>
+            <span className="badge text-bg-primary">Profile</span>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow-soft">
-        <h2 className="mb-4 text-lg font-semibold">My Rooms</h2>
-        {loadingRooms ? (
-          <ProfileSkeleton />
-        ) : myRooms.length ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {myRooms.map((room) => (
-              <article key={`${room.owner.username}-${room.name}`} className="rounded-xl border border-slate-200 p-4">
-                <h3 className="font-semibold text-slate-800">{room.name}</h3>
-                <p className="mt-1 text-sm text-slate-600">{room.category}</p>
-              </article>
-            ))}
+      <div className="row g-3">
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 className="mb-3">My Rooms</h5>
+            {myRooms.length ? (
+              <ul className="list-group list-group-flush">
+                {myRooms.map((room) => (
+                  <li key={room.id} className="list-group-item px-0">
+                    <div className="fw-semibold">{room.name}</div>
+                    <small className="text-secondary">{room.category || 'General'}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="alert alert-info mb-0">No rooms created yet.</div>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-slate-600">You don't own any rooms yet.</p>
-        )}
-      </section>
+        </div>
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow-soft">
-        <h2 className="mb-4 text-lg font-semibold">Joined Rooms</h2>
-        <p className="text-sm text-slate-600">No joined rooms yet — coming soon.</p>
-      </section>
-    </main>
+        <div className="col-12 col-lg-6">
+          <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 className="mb-3">Joined Rooms</h5>
+            <div className="alert alert-warning mb-0">Coming soon.</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
 export default Profile;

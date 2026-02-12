@@ -1,33 +1,46 @@
-# Mates Frontend SPA
+# Mates Front (Beginner Friendly)
 
-Production-ready React + TypeScript + Tailwind SPA for chat rooms, auth, profile, and roadmap pages.
+This is a simplified React + Vite frontend with these pages:
+- Login
+- Register
+- Home (rooms list + create room)
+- Profile
+- Updates
 
 ## Setup
 
-1. Install dependencies
+1. Install dependencies:
 
 ```bash
-npm i
+npm install
 ```
 
-2. Create `.env` file
+2. Create a `.env` file in the project root:
 
-```bash
-VITE_API_BASE_URL="http://127.0.0.1:8000"
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-3. Run development server
+3. Start app:
 
 ```bash
 npm run dev
 ```
 
-## Implemented Features
+## Dark mode
 
-- Register and Login flows backed by `/api/users/register/` and `/api/users/token/`.
-- Auth context with session restore via `/api/users/info/`.
-- Axios client with auth header + 401 auto-logout handling.
-- Rooms list and create room modal (`/api/rooms/`, `/api/rooms/create/`).
-- Supports both array and paginated rooms responses.
-- Protected pages (`/home`, `/profile`), plus `/updates` placeholder roadmap.
-- UI-only stubs for join flow, room actions dropdown, and joined rooms.
+- Navbar has a **🌙 Dark Mode** toggle.
+- Theme value is saved in `localStorage` with key `theme` (`light` or `dark`).
+- Body gets class `theme-light` or `theme-dark`.
+- Styles are in `src/theme.css`.
+
+## API functions
+
+All API calls are in `src/api.js`:
+- `registerUser`
+- `loginUser`
+- `getProfile`
+- `getRooms`
+- `createRoom`
+
+Token is saved in `localStorage` (`accessToken`, `refreshToken`) after login.

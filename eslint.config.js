@@ -15,6 +15,10 @@ export default [
         document: 'readonly',
         localStorage: 'readonly',
         crypto: 'readonly',
+        fetch: 'readonly',
+        navigator: 'readonly',
+        alert: 'readonly',
+        setTimeout: 'readonly',
       },
       parserOptions: {
         ecmaFeatures: { jsx: true },
@@ -28,6 +32,7 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'no-unused-vars': 'off',
       'react-refresh/only-export-components': 'off',
+      'react-hooks/exhaustive-deps': 'off',
     },
   },
 ];

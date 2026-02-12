@@ -1,126 +1,188 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listRooms } from '../api/rooms';
-import CreateRoomModal from '../components/CreateRoomModal';
-import Pagination from '../components/Pagination';
-import RoomCard from '../components/RoomCard';
-import RoomInfoModal from '../components/RoomInfoModal';
-import { RoomCardSkeleton } from '../components/Skeletons';
-import { useToast } from '../components/ToastProvider';
-import { normalizeRoomsResponse } from '../utils/pagination';
-import { toFriendlyError } from '../utils/helpers';
+import { createRoom, getRooms } from '../api';
 
-const emptyPage = {
-  rooms: [],
-  currentPage: 1,
-  totalPages: 1,
-  hasNext: false,
-  hasPrevious: false,
-  mode: 'client',
-};
-
-const Home = () => {
-  const [roomsPage, setRoomsPage] = useState(emptyPage);
-  const [page, setPage] = useState(1);
+function Home() {
+  const token = localStorage.getItem('accessToken');
+  const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const { pushToast } = useToast();
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
+  const [roomInfo, setRoomInfo] = useState(null);
 
-  const loadRooms = async (requestedPage = page) => {
+  const [newRoom, setNewRoom] = useState({ name: '', category: '', description: '' });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  const loadRooms = async (pageNumber) => {
+    setError('');
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setError(null);
-      // Rooms API may send plain array or paginated object, normalize handles both.
-      const data = await listRooms(requestedPage);
-      const normalized = normalizeRoomsResponse(data, requestedPage);
-      setRoomsPage(normalized);
-      setPage(normalized.currentPage);
+      const data = await getRooms(token, pageNumber);
+      setRooms(data.rooms || []);
+      setHasNext(Boolean(data.next));
+      setHasPrev(Boolean(data.previous));
+      setPage(pageNumber);
     } catch (err) {
-      setError(toFriendlyError(err, 'Unable to fetch rooms right now.'));
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadRooms(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadRooms(1);
   }, []);
 
   const filteredRooms = useMemo(() => {
-    if (!searchTerm.trim()) return roomsPage.rooms;
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    return roomsPage.rooms.filter((room) =>
-      [room.name, room.category, room.owner.username].some((entry) => entry?.toLowerCase().includes(normalizedSearch)),
-    );
-  }, [roomsPage.rooms, searchTerm]);
+    const text = search.toLowerCase();
+    return rooms.filter((room) => {
+      const name = (room.name || '').toLowerCase();
+      const category = (room.category || '').toLowerCase();
+      const description = (room.description || '').toLowerCase();
+      return name.includes(text) || category.includes(text) || description.includes(text);
+    });
+  }, [rooms, search]);
+
+  const submitCreateRoom = async (e) => {
+    e.preventDefault();
+    setCreateError('');
+    setCreating(true);
+
+    try {
+      await createRoom(token, newRoom);
+      setNewRoom({ name: '', category: '', description: '' });
+      window.bootstrap.Modal.getOrCreateInstance(document.getElementById('createRoomModal')).hide();
+      loadRooms(page);
+    } catch (err) {
+      setCreateError(err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const fakeCopyLink = () => {
+    navigator.clipboard.writeText('https://mates-room-link.example/coming-soon');
+    alert('Room link copied (fake link for now).');
+  };
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6">
-      <section className="mb-6 flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search by room, category, owner..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 sm:max-w-sm"
-        />
-        <button onClick={() => setCreateOpen(true)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+    <div className="container py-4">
+      <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+        <h2 className="mb-0">Rooms</h2>
+        <button className="btn btn-primary rounded-3" data-bs-toggle="modal" data-bs-target="#createRoomModal">
           Create Room
         </button>
-      </section>
+      </div>
 
-      {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          <p>{error}</p>
-          <button onClick={() => void loadRooms(page)} className="mt-2 rounded bg-rose-600 px-3 py-1.5 font-medium text-white">
-            Retry
-          </button>
-        </div>
-      ) : null}
+      <div className="card border-0 shadow-sm rounded-4 p-3 mb-4">
+        <input
+          className="form-control"
+          placeholder="Search rooms by name/category/description"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <RoomCardSkeleton key={index} />
-          ))}
+        <div className="text-center py-5">
+          <div className="spinner-border" />
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredRooms.map((room) => (
-              <RoomCard key={`${room.owner.username}-${room.name}`} room={room} onInfo={setSelectedRoom} />
-            ))}
-          </div>
+        <div className="row g-3">
+          {filteredRooms.map((room) => (
+            <div key={room.id} className="col-12 col-md-6 col-lg-4">
+              <div className="card h-100 border-0 shadow-sm rounded-4">
+                <div className="card-body d-flex flex-column gap-2">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <h5 className="card-title mb-0">{room.name || 'Untitled Room'}</h5>
+                    <div className="dropdown">
+                      <button className="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown">⋮</button>
+                      <ul className="dropdown-menu dropdown-menu-end">
+                        <li>
+                          <button className="dropdown-item" onClick={() => setRoomInfo(room)} data-bs-toggle="modal" data-bs-target="#roomInfoModal">
+                            Room Info
+                          </button>
+                        </li>
+                        <li><button className="dropdown-item" onClick={fakeCopyLink}>Copy link</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <span className="badge text-bg-secondary d-inline-block">{room.category || 'General'}</span>
+                  <p className="text-secondary flex-grow-1 mb-2">{room.description || 'No description yet.'}</p>
+                  <button className="btn btn-outline-primary rounded-3" onClick={() => alert('Join feature: Coming soon')}>
+                    Join
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
 
-          {!filteredRooms.length && <p className="rounded-xl bg-white p-6 text-center text-slate-600 shadow-soft">No rooms match your search.</p>}
-
-          <Pagination
-            currentPage={roomsPage.currentPage}
-            totalPages={roomsPage.totalPages}
-            hasNext={roomsPage.hasNext}
-            hasPrevious={roomsPage.hasPrevious}
-            onNext={() => void loadRooms(roomsPage.currentPage + 1)}
-            onPrevious={() => void loadRooms(roomsPage.currentPage - 1)}
-          />
-
-          <p className="mt-2 text-right text-xs text-slate-500">Pagination mode: {roomsPage.mode === 'server' ? 'Server-driven' : 'Client-side fallback'}</p>
-        </>
+          {!filteredRooms.length && (
+            <div className="col-12">
+              <div className="alert alert-info mb-0">No rooms found.</div>
+            </div>
+          )}
+        </div>
       )}
 
-      <CreateRoomModal
-        isOpen={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={async () => {
-          // After create, refresh first page so new room appears immediately.
-          await loadRooms(1);
-          pushToast('Rooms refreshed', 'info');
-        }}
-      />
-      <RoomInfoModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
-    </main>
+      <nav className="mt-4">
+        <ul className="pagination justify-content-center">
+          <li className={`page-item ${!hasPrev ? 'disabled' : ''}`}>
+            <button className="page-link" onClick={() => hasPrev && loadRooms(page - 1)}>Previous</button>
+          </li>
+          <li className="page-item active"><span className="page-link">{page}</span></li>
+          <li className={`page-item ${!hasNext ? 'disabled' : ''}`}>
+            <button className="page-link" onClick={() => hasNext && loadRooms(page + 1)}>Next</button>
+          </li>
+        </ul>
+      </nav>
+
+      <div className="modal fade" id="createRoomModal" tabIndex="-1" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content rounded-4">
+            <div className="modal-header">
+              <h5 className="modal-title">Create a room</h5>
+              <button className="btn-close" data-bs-dismiss="modal" />
+            </div>
+            <form onSubmit={submitCreateRoom}>
+              <div className="modal-body d-grid gap-3">
+                {createError && <div className="alert alert-danger mb-0">{createError}</div>}
+                <input className="form-control" placeholder="Room name" required value={newRoom.name} onChange={(e) => setNewRoom({ ...newRoom, name: e.target.value })} />
+                <input className="form-control" placeholder="Category" required value={newRoom.category} onChange={(e) => setNewRoom({ ...newRoom, category: e.target.value })} />
+                <textarea className="form-control" placeholder="Description" rows="3" required value={newRoom.description} onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })} />
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+                <button className="btn btn-primary" disabled={creating}>{creating ? 'Creating...' : 'Create'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal fade" id="roomInfoModal" tabIndex="-1" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content rounded-4">
+            <div className="modal-header">
+              <h5 className="modal-title">Room Info</h5>
+              <button className="btn-close" data-bs-dismiss="modal" />
+            </div>
+            <div className="modal-body">
+              <h5>{roomInfo?.name || '-'}</h5>
+              <p className="mb-2"><strong>Category:</strong> {roomInfo?.category || '-'}</p>
+              <p className="mb-0"><strong>Description:</strong> {roomInfo?.description || '-'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
 export default Home;

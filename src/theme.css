@@ -1,0 +1,61 @@
+body {
+  min-height: 100vh;
+}
+
+body.theme-light {
+  background: #f5f7fb;
+  color: #18222f;
+}
+
+body.theme-dark {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+body.theme-dark .app-navbar {
+  background: #111827;
+  border-color: #334155 !important;
+}
+
+body.theme-light .app-navbar {
+  background: #ffffff;
+}
+
+body.theme-dark .card,
+body.theme-dark .modal-content,
+body.theme-dark .dropdown-menu,
+body.theme-dark .list-group-item,
+body.theme-dark .page-link,
+body.theme-dark .form-control {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+body.theme-dark .text-secondary {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark .nav-link,
+body.theme-dark .navbar-brand,
+body.theme-dark .btn-close,
+body.theme-dark .modal-title,
+body.theme-dark .dropdown-item {
+  color: #e2e8f0;
+}
+
+body.theme-dark .dropdown-item:hover {
+  background: #334155;
+}
+
+body.theme-dark .alert-info {
+  background-color: #0c4a6e;
+  color: #dbeafe;
+  border-color: #2563eb;
+}
+
+body.theme-dark .alert-warning {
+  background-color: #78350f;
+  color: #fef3c7;
+  border-color: #d97706;
+}

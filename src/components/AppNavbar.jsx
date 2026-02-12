@@ -1,50 +1,40 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-function AppNavbar({ isLoggedIn, theme, onToggleTheme }) {
-  const navigate = useNavigate();
-
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    navigate('/login');
-  };
+function AppNavbar({ isLoggedIn, theme, onToggleTheme, profile }) {
+  const username = profile?.username || 'User';
+  const avatar = profile?.profileImage || 'https://via.placeholder.com/40x40.png?text=U';
 
   return (
-    <nav className="navbar navbar-expand-lg border-bottom app-navbar">
-      <div className="container py-2">
-        <Link className="navbar-brand fw-bold" to={isLoggedIn ? '/home' : '/login'}>
-          Mates
-        </Link>
-
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-          <span className="navbar-toggler-icon" />
-        </button>
-
-        <div className="collapse navbar-collapse" id="mainNavbar">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            {isLoggedIn && (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/home">Home</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/profile">Profile</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/updates">Updates</Link>
-                </li>
-              </>
-            )}
-          </ul>
-
-          <div className="d-flex align-items-center gap-2">
-            <button className="btn btn-outline-secondary btn-sm rounded-3" onClick={onToggleTheme}>
-              🌙 Dark Mode: {theme === 'dark' ? 'On' : 'Off'}
+    <nav className="navbar border-bottom app-navbar sticky-top">
+      <div className="container-fluid px-3 px-lg-4 py-2">
+        <div className="d-flex align-items-center gap-2">
+          {isLoggedIn && (
+            <button
+              className="btn btn-outline-secondary btn-sm d-lg-none"
+              type="button"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#appSidebarOffcanvas"
+              aria-controls="appSidebarOffcanvas"
+            >
+              ☰
             </button>
+          )}
+          <Link className="navbar-brand fw-bold mb-0" to={isLoggedIn ? '/home' : '/login'}>
+            Mates
+          </Link>
+        </div>
 
-            {!isLoggedIn && <Link className="btn btn-primary btn-sm rounded-3" to="/login">Login</Link>}
-            {isLoggedIn && <button className="btn btn-danger btn-sm rounded-3" onClick={logout}>Logout</button>}
-          </div>
+        <div className="d-flex align-items-center gap-3">
+          <button className="btn btn-outline-secondary btn-sm rounded-3" onClick={onToggleTheme}>
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
+
+          {isLoggedIn && (
+            <div className="d-flex align-items-center gap-2">
+              <img src={avatar} alt="avatar" width="36" height="36" className="rounded-circle border" />
+              <span className="fw-semibold small">{username}</span>
+            </div>
+          )}
         </div>
       </div>
     </nav>

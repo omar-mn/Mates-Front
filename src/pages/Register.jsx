@@ -28,7 +28,7 @@ function Register() {
   };
 
   return (
-    <div className="container py-5" style={{ maxWidth: '520px' }}>
+    <div className="container py-5 auth-container">
       <div className="card border-0 shadow-sm rounded-4 p-4">
         <h2 className="mb-3">Register</h2>
         <p className="text-secondary mb-4">Create your account.</p>

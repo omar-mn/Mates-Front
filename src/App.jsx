@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { getProfile } from './api';
 import AppNavbar from './components/AppNavbar';
 import AppSidebar from './components/AppSidebar';
@@ -8,36 +8,24 @@ import Login from './pages/Login';
 import PlaceholderPage from './pages/PlaceholderPage';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
+import Settings from './pages/Settings';
 import Updates from './pages/Updates';
 
-function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('accessToken');
-  if (!token) return <Navigate to="/login" replace />;
+function ProtectedRoute({ isLoggedIn, children }) {
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
 }
 
 function App() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  const token = localStorage.getItem('accessToken');
+  const [token, setToken] = useState(localStorage.getItem('accessToken') || '');
   const [profile, setProfile] = useState(null);
   const [apiStatus, setApiStatus] = useState('connected');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [createRoomRequest, setCreateRoomRequest] = useState(0);
   const [refreshRoomsRequest, setRefreshRoomsRequest] = useState(0);
 
-  useEffect(() => {
-    document.body.classList.remove('theme-light', 'theme-dark');
-    document.body.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    if (!token && location.pathname === '/') {
-      window.location.replace('/login');
-    }
-  }, [location.pathname, token]);
+  const isLoggedIn = Boolean(token);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -58,6 +46,19 @@ function App() {
     loadProfile();
   }, [token]);
 
+  const handleLoginSuccess = () => {
+    setToken(localStorage.getItem('accessToken') || '');
+    navigate('/home');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    setToken('');
+    setProfile(null);
+    navigate('/login');
+  };
+
   const handleCreateRoom = () => {
     navigate('/home');
     setCreateRoomRequest((prev) => prev + 1);
@@ -75,32 +76,28 @@ function App() {
 
   return (
     <>
-      <AppNavbar
-        isLoggedIn={Boolean(token)}
-        profile={profile}
-        theme={theme}
-        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-      />
+      <AppNavbar isLoggedIn={isLoggedIn} profile={profile} />
 
-      {token && (
+      {isLoggedIn && (
         <AppSidebar
           apiStatus={apiStatus}
           onCreateRoom={handleCreateRoom}
           onRefreshRooms={handleRefreshRooms}
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}
+          onLogout={handleLogout}
         />
       )}
 
-      <main className={token ? 'app-main with-sidebar' : 'app-main'}>
+      <main className={isLoggedIn ? 'app-main with-sidebar' : 'app-main'}>
         <Routes>
-          <Route path="/" element={<Navigate to={token ? '/home' : '/login'} replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
+          <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <Register />} />
           <Route
             path="/home"
             element={(
-              <ProtectedRoute>
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <Home
                   selectedCategory={selectedCategory}
                   createRoomRequest={createRoomRequest}
@@ -110,21 +107,21 @@ function App() {
               </ProtectedRoute>
             )}
           />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/updates" element={<ProtectedRoute><Updates /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Profile /></ProtectedRoute>} />
+          <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
           <Route
             path="/settings"
-            element={<ProtectedRoute><PlaceholderPage title="Settings" description="Preferences panel coming soon (theme, language, and more)." /></ProtectedRoute>}
+            element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} /></ProtectedRoute>}
           />
           <Route
             path="/help"
-            element={<ProtectedRoute><PlaceholderPage title="Help / FAQ" description="Helpful guides and frequently asked questions will appear here." /></ProtectedRoute>}
+            element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>}
           />
           <Route
             path="/about"
-            element={<ProtectedRoute><PlaceholderPage title="About Mates" description="Mates helps you discover and join rooms for your interests." /></ProtectedRoute>}
+            element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="About" description="About this app page is coming soon." /></ProtectedRoute>}
           />
-          <Route path="*" element={<Navigate to={token ? '/home' : '/login'} replace />} />
+          <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
         </Routes>
       </main>
     </>

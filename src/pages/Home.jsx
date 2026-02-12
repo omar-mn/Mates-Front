@@ -134,7 +134,7 @@ function Home({ selectedCategory, createRoomRequest, refreshRoomsRequest, onApiS
                       <small className="fw-semibold">{room.owner?.username || 'Unknown owner'}</small>
                     </div>
                     <div className="dropdown">
-                      <button className="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown">⋮</button>
+                      <button className="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i className="bi bi-three-dots-vertical" /></button>
                       <ul className="dropdown-menu dropdown-menu-end">
                         <li>
                           <button className="dropdown-item" onClick={() => setRoomInfo(room)} data-bs-toggle="modal" data-bs-target="#roomInfoModal">

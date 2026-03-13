@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import PlaceholderPage from './pages/PlaceholderPage';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
+import RoomDetails from './pages/RoomDetails';
 import Settings from './pages/Settings';
 import Updates from './pages/Updates';
 import ToastHost from './components/ToastHost';
@@ -120,6 +121,18 @@ function App() {
                   refreshRoomsRequest={refreshRoomsRequest}
                   onApiStatusChange={setApiStatus}
                   showToast={showToast}
+                />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/room/:id"
+            element={(
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <RoomDetails
+                  onApiStatusChange={setApiStatus}
+                  showToast={showToast}
+                  profile={profile}
                 />
               </ProtectedRoute>
             )}

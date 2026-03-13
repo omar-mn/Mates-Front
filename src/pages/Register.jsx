@@ -4,8 +4,12 @@ import { registerUser } from '../api';
 
 function Register({ showToast }) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -17,7 +21,7 @@ function Register({ showToast }) {
     setLoading(true);
 
     try {
-      await registerUser(email, password);
+      await registerUser(form);
       const successMessage = 'Account created! You can now login.';
       setSuccess(successMessage);
       showToast?.(successMessage, 'success');
@@ -41,12 +45,20 @@ function Register({ showToast }) {
 
         <form onSubmit={handleSubmit} className="d-grid gap-3">
           <div>
+            <label className="form-label">Username</label>
+            <input className="form-control" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
+          </div>
+          <div>
             <label className="form-label">Email</label>
-            <input className="form-control" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input className="form-control" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           </div>
           <div>
             <label className="form-label">Password</label>
-            <input className="form-control" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input className="form-control" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          </div>
+          <div>
+            <label className="form-label">Confirm password</label>
+            <input className="form-control" type="password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required />
           </div>
 
           <button className="btn btn-primary rounded-3" disabled={loading}>

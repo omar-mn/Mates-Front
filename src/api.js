@@ -1,44 +1,67 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const DEFAULT_API_BASE = 'https://app-a83e9cdd-955a-4567-bc93-8f4629c1052b.cleverapps.io/api/';
 
-export async function registerUser(email, password) {
-  // We call POST /api/users/register/ to create a brand new account.
-  const response = await fetch(`${API_BASE_URL}/api/users/register/`, {
+const normalizeBase = (baseUrl) => {
+  if (!baseUrl) return DEFAULT_API_BASE;
+  return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+};
+
+const API_BASE_URL = normalizeBase(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE);
+
+const parseApiError = async (response, fallbackMessage) => {
+  const errorData = await response.json().catch(() => ({}));
+  if (typeof errorData?.detail === 'string') return errorData.detail;
+
+  const firstEntry = Object.values(errorData || {}).find((value) => Array.isArray(value) && value.length);
+  if (firstEntry) return String(firstEntry[0]);
+
+  return fallbackMessage;
+};
+
+export function getAuthHeaders() {
+  const token = localStorage.getItem('accessToken') || '';
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+export async function registerUser({ username, email, password, confirmPassword }) {
+  const response = await fetch(`${API_BASE_URL}auth/registration/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      username,
+      email,
+      password1: password,
+      password2: confirmPassword,
+    }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Register failed');
+    throw new Error(await parseApiError(response, 'Register failed'));
   }
 
   return response.json().catch(() => ({}));
 }
 
 export async function loginUser(email, password) {
-  // We call POST /api/users/token/ to get access + refresh tokens for auth.
-  const response = await fetch(`${API_BASE_URL}/api/users/token/`, {
+  const response = await fetch(`${API_BASE_URL}auth/login/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Login failed');
+    throw new Error(await parseApiError(response, 'Login failed'));
   }
 
-  const data = await response.json();
-  // We store token values in localStorage so page refresh keeps the user logged in.
-  localStorage.setItem('accessToken', data.access || '');
-  localStorage.setItem('refreshToken', data.refresh || '');
+  const data = await response.json().catch(() => ({}));
+  const accessToken = data.access || data.access_token || data.token || '';
+  localStorage.setItem('accessToken', accessToken);
   return data;
 }
 
 export async function getProfile(token) {
-  // We call GET /api/users/info/ for profile data and send Authorization so server knows who we are.
-  const response = await fetch(`${API_BASE_URL}/api/users/info/`, {
+  const response = await fetch(`${API_BASE_URL}users/info/`, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -46,68 +69,89 @@ export async function getProfile(token) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to load profile');
+    throw new Error(await parseApiError(response, 'Failed to load profile'));
   }
 
-  // We return API data so the page can setProfile(...) and re-render UI.
   return response.json();
 }
 
-export async function getRooms(token, pageOrUrl = 1) {
-  // If `pageOrUrl` is already an absolute URL from DRF `next`/`previous`, use it directly.
-  // Otherwise we build the normal /api/rooms/?page=... endpoint URL.
-  const endpoint = typeof pageOrUrl === 'string' ? pageOrUrl : `${API_BASE_URL}/api/rooms/?page=${pageOrUrl}`;
-
-  const response = await fetch(endpoint, {
+export async function getRooms() {
+  const response = await fetch(`${API_BASE_URL}rooms/`, {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...getAuthHeaders(),
     },
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to load rooms');
+    throw new Error(await parseApiError(response, 'Failed to load rooms'));
   }
 
-  const data = await response.json();
-
-  if (Array.isArray(data)) {
-    return {
-      rooms: data,
-      next: null,
-      previous: null,
-      count: data.length,
-      isPaginated: false,
-    };
-  }
-
-  return {
-    rooms: data.results || [],
-    next: data.next || null,
-    previous: data.previous || null,
-    count: data.count || 0,
-    isPaginated: true,
-  };
+  const data = await response.json().catch(() => []);
+  return Array.isArray(data) ? data : data.results || [];
 }
 
-export async function createRoom(token, roomData) {
-  // We call POST /api/rooms/create/ and include Authorization because creating a room needs a logged-in user.
-  const response = await fetch(`${API_BASE_URL}/api/rooms/create/`, {
+export async function createRoom(roomData) {
+  const response = await fetch(`${API_BASE_URL}rooms/create/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(roomData),
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to create room');
+    throw new Error(await parseApiError(response, 'Failed to create room'));
   }
 
-  // We return the new room so Home page can add/update room state immediately.
+  return response.json().catch(() => ({}));
+}
+
+export async function getRoomDetails(roomId) {
+  const response = await fetch(`${API_BASE_URL}rooms/modify/${roomId}/`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Failed to load room details'));
+  }
+
   return response.json();
+}
+
+export async function joinRoom(roomId) {
+  const response = await fetch(`${API_BASE_URL}rooms/membership/${roomId}/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Failed to join room'));
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+export async function sendMessage(roomId, content) {
+  const response = await fetch(`${API_BASE_URL}messages/send/${roomId}/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Failed to send message'));
+  }
+
+  return response.json().catch(() => ({}));
 }

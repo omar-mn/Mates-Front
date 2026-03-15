@@ -411,3 +411,9 @@ textarea::placeholder {
 .toast-accent-info {
   border-left: 4px solid #4dabf7;
 }
+
+
+.chat-own-message {
+  background: linear-gradient(145deg, rgba(71, 29, 125, 0.92), rgba(55, 24, 103, 0.94));
+  border: 1px solid rgba(176, 109, 255, 0.45);
+}

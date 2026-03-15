@@ -48,9 +48,10 @@ function Login({ onLoginSuccess, showToast }) {
           </button>
         </form>
 
-        <p className="mt-4 mb-0">
-          No account? <Link to="/register">Create one</Link>
-        </p>
+        <div className="mt-4 d-flex justify-content-between flex-wrap gap-2">
+          <p className="mb-0">No account? <Link to="/register">Create one</Link></p>
+          <p className="mb-0"><Link to="/forgot-password">Forgot password?</Link></p>
+        </div>
       </div>
     </div>
   );

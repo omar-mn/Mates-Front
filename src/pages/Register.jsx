@@ -18,6 +18,14 @@ function Register({ showToast }) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+
+    if (form.password !== form.confirmPassword) {
+      const message = 'Passwords do not match.';
+      setError(message);
+      showToast?.(message, 'danger');
+      return;
+    }
     setLoading(true);
 
     try {

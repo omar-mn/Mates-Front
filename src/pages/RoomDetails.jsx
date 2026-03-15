@@ -32,9 +32,24 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
     setError('');
 
     try {
-      const [roomData, roomMessages] = await Promise.all([getRoomDetails(id), getRoomMessages(id)]);
-      setRoom(roomData || null);
-      setMessages(roomMessages || []);
+      const [roomResult, messagesResult] = await Promise.allSettled([getRoomDetails(id), getRoomMessages(id)]);
+
+      if (roomResult.status === 'fulfilled') {
+        setRoom(roomResult.value || null);
+      } else {
+        setRoom(null);
+      }
+
+      if (messagesResult.status === 'fulfilled') {
+        setMessages(messagesResult.value || []);
+      } else {
+        setMessages([]);
+      }
+
+      if (roomResult.status === 'rejected' && messagesResult.status === 'rejected') {
+        throw roomResult.reason;
+      }
+
       onApiStatusChange?.('connected');
     } catch (err) {
       setError(err.message || 'Failed to load room');

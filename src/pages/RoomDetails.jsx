@@ -4,7 +4,6 @@ import {
   deleteMessage,
   getRoomDetails,
   getRoomMessages,
-  getRoomSocketUrl,
   updateMessage,
 } from '../api';
 
@@ -67,15 +66,23 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   useEffect(() => {
     if (!id) return;
 
-    const socket = new window.WebSocket(getRoomSocketUrl(id));
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const roomId = encodeURIComponent(id);
+    const socketUrl = `${protocol}://127.0.0.1:8000/ws/message/${roomId}/?token=${encodeURIComponent(token)}`;
+    window.console.log('[RoomDetails] final socket URL:', socketUrl);
+
+    const socket = new window.WebSocket(socketUrl);
     wsRef.current = socket;
 
     socket.onopen = () => {
+      window.console.log('[RoomDetails] websocket onopen');
       setSocketState('connected');
       showToast?.('Connected to room chat.', 'info');
     };
 
     socket.onmessage = (event) => {
+      window.console.log('[RoomDetails] websocket onmessage:', event.data);
       try {
         const parsed = JSON.parse(event.data);
         if (parsed?.content) {
@@ -86,18 +93,26 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
       }
     };
 
-    socket.onerror = () => {
+    socket.onerror = (event) => {
+      window.console.log('[RoomDetails] websocket onerror:', event);
       setSocketState('error');
       showToast?.('Chat connection error.', 'danger');
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      window.console.log('[RoomDetails] websocket onclose:', event);
       setSocketState('disconnected');
       showToast?.('Chat disconnected.', 'info');
     };
 
     return () => {
-      socket.close();
+      if (wsRef.current === socket) {
+        wsRef.current = null;
+      }
+
+      if (socket.readyState === window.WebSocket.OPEN || socket.readyState === window.WebSocket.CONNECTING) {
+        socket.close();
+      }
     };
   }, [id]);
 

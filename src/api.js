@@ -10,7 +10,7 @@ export const API_BASE_URL = normalizeBase(import.meta.env.VITE_API_BASE_URL, DEF
 
 const deriveWsBaseFromApiBase = (apiBase) => {
   try {
-    const parsed = new URL(apiBase);
+    const parsed = new window.URL(apiBase);
     const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${wsProtocol}//${parsed.host}/ws/`;
   } catch {
@@ -50,10 +50,9 @@ export function getAuthHeaders() {
 }
 
 export function getRoomSocketUrl(roomId) {
-  const token = localStorage.getItem('accessToken') || '';
-  // Room websocket endpoint used for real-time chat messages.
+  const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
   const encodedToken = encodeURIComponent(token);
-  return `${WS_BASE_URL}message/${roomId}/?token=${encodedToken}&access_token=${encodedToken}`;
+  return `${WS_BASE_URL}message/${encodeURIComponent(roomId)}/?token=${encodedToken}`;
 }
 
 // Register endpoint: POST /auth/registration/

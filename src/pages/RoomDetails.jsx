@@ -82,16 +82,31 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
     };
 
     socket.onmessage = (event) => {
-      window.console.log('[RoomDetails] websocket onmessage:', event.data);
-      try {
-        const parsed = JSON.parse(event.data);
-        if (parsed?.content) {
-          setMessages((prev) => [...prev, parsed]);
-        }
-      } catch {
-        // ignore malformed websocket payload
+  // window.console.log('[RoomDetails] websocket onmessage:', event.data);
+      
+    try {
+      const parsed = JSON.parse(event.data);
+    
+      if (parsed?.type === 'chat_message' && parsed?.message) {
+        const incoming = parsed.message;
+      
+        setMessages((prev) => {
+          if (incoming?.id && prev.some((msg) => msg.id === incoming.id)) {
+            return prev;
+          }
+          return [...prev, incoming];
+        });
+      
+        return;
       }
-    };
+    
+      if (parsed?.content) {
+        setMessages((prev) => [...prev, parsed]);
+      }
+    } catch (err) {
+      window.console.error('[RoomDetails] failed to parse websocket payload:', err);
+    }
+  };
 
     socket.onerror = (event) => {
       window.console.log('[RoomDetails] websocket onerror:', event);

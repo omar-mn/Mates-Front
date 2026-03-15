@@ -31,26 +31,20 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
     setError('');
 
     try {
-      const [roomResult, messagesResult] = await Promise.allSettled([getRoomDetails(id), getRoomMessages(id)]);
+      const roomDetails = await getRoomDetails(id);
+      setRoom(roomDetails || null);
 
-      if (roomResult.status === 'fulfilled') {
-        setRoom(roomResult.value || null);
-      } else {
-        setRoom(null);
-      }
-
-      if (messagesResult.status === 'fulfilled') {
-        setMessages(messagesResult.value || []);
+      if (roomDetails?.is_member === true) {
+        const roomMessages = await getRoomMessages(id);
+        setMessages(roomMessages || []);
       } else {
         setMessages([]);
       }
 
-      if (roomResult.status === 'rejected' && messagesResult.status === 'rejected') {
-        throw roomResult.reason;
-      }
-
       onApiStatusChange?.('connected');
     } catch (err) {
+      setRoom(null);
+      setMessages([]);
       setError(err.message || 'Failed to load room');
       onApiStatusChange?.('error');
       showToast?.(err.message || 'Network error', 'danger');
@@ -65,6 +59,11 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
 
   useEffect(() => {
     if (!id) return;
+    if (!room) return;
+    if (room?.is_member === false) {
+      setSocketState('disconnected');
+      return;
+    }
 
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -114,7 +113,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
         socket.close();
       }
     };
-  }, [id]);
+  }, [id, room]);
 
   useEffect(() => {
     const node = messageListRef.current;
@@ -200,69 +199,79 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
             <p className="mb-0 text-secondary">{room?.description || 'No description available.'}</p>
           </div>
 
-          <div className="card border-0 shadow-sm rounded-4 p-3 mb-3" ref={messageListRef} style={{ maxHeight: '56vh', overflowY: 'auto' }}>
-            <div className="d-grid gap-3">
-              {sortedMessages.map((message, index) => {
-                const messageUsername = message?.user?.username || '';
-                const isCurrentUser = currentUsername && messageUsername === currentUsername;
-                const canEdit = isCurrentUser;
-                const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
+          {room?.is_member === false ? (
+            <div className="card border-0 shadow-sm rounded-4 p-3 mb-3">
+              <div className="alert alert-warning mb-0">
+                You must join this room first to view and send chat messages.
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="card border-0 shadow-sm rounded-4 p-3 mb-3" ref={messageListRef} style={{ maxHeight: '56vh', overflowY: 'auto' }}>
+                <div className="d-grid gap-3">
+                  {sortedMessages.map((message, index) => {
+                    const messageUsername = message?.user?.username || '';
+                    const isCurrentUser = currentUsername && messageUsername === currentUsername;
+                    const canEdit = isCurrentUser;
+                    const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
 
-                return (
-                  <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
-                    <div className="d-flex gap-2" style={{ maxWidth: '78%' }}>
-                      {!isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
+                    return (
+                      <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                        <div className="d-flex gap-2" style={{ maxWidth: '78%' }}>
+                          {!isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
 
-                      <div className={`card border-0 p-2 px-3 ${isCurrentUser ? 'chat-own-message' : ''}`} style={{ wordBreak: 'break-word' }}>
-                        <div className="d-flex align-items-start justify-content-between gap-2">
-                          <div className="small text-secondary fw-semibold">{messageUsername || 'User'}</div>
-                          {(canEdit || canDelete) && (
-                            <div className="dropdown">
-                              <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
-                              <ul className="dropdown-menu dropdown-menu-end">
-                                {canEdit && <li><button className="dropdown-item" onClick={() => {
-                                  setEditingMessage({ id: message.id, content: message.content || '' });
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
-                                }}>Edit message</button></li>}
-                                {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
-                                  setDeletingMessage(message);
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
-                                }}>Delete message</button></li>}
-                              </ul>
+                          <div className={`card border-0 p-2 px-3 ${isCurrentUser ? 'chat-own-message' : ''}`} style={{ wordBreak: 'break-word' }}>
+                            <div className="d-flex align-items-start justify-content-between gap-2">
+                              <div className="small text-secondary fw-semibold">{messageUsername || 'User'}</div>
+                              {(canEdit || canDelete) && (
+                                <div className="dropdown">
+                                  <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
+                                  <ul className="dropdown-menu dropdown-menu-end">
+                                    {canEdit && <li><button className="dropdown-item" onClick={() => {
+                                      setEditingMessage({ id: message.id, content: message.content || '' });
+                                      window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
+                                    }}>Edit message</button></li>}
+                                    {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
+                                      setDeletingMessage(message);
+                                      window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
+                                    }}>Delete message</button></li>}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
-                          )}
+                            <div className="mt-1" style={{ whiteSpace: 'pre-wrap' }}>{message?.content || ''}</div>
+                            <div className="small text-secondary mt-1">{message?.sent_at ? new Date(message.sent_at).toLocaleString() : ''}</div>
+                          </div>
+
+                          {isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
                         </div>
-                        <div className="mt-1" style={{ whiteSpace: 'pre-wrap' }}>{message?.content || ''}</div>
-                        <div className="small text-secondary mt-1">{message?.sent_at ? new Date(message.sent_at).toLocaleString() : ''}</div>
                       </div>
+                    );
+                  })}
 
-                      {isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
-                    </div>
-                  </div>
-                );
-              })}
+                  {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
+                </div>
+              </div>
 
-              {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
-            </div>
-          </div>
-
-          <form className="card border-0 shadow-sm rounded-4 p-3" onSubmit={handleSend}>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <small className="text-secondary">Chat status: {socketState}</small>
-            </div>
-            <div className="d-flex gap-2 align-items-end">
-              <textarea
-                className="form-control"
-                rows="2"
-                placeholder="Write a message..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={handleTextareaKeyDown}
-                required
-              />
-              <button className="btn btn-primary" disabled={socketState !== 'connected'}>Send</button>
-            </div>
-          </form>
+              <form className="card border-0 shadow-sm rounded-4 p-3" onSubmit={handleSend}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <small className="text-secondary">Chat status: {socketState}</small>
+                </div>
+                <div className="d-flex gap-2 align-items-end">
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    placeholder="Write a message..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    onKeyDown={handleTextareaKeyDown}
+                    required
+                  />
+                  <button className="btn btn-primary" disabled={socketState !== 'connected'}>Send</button>
+                </div>
+              </form>
+            </>
+          )}
 
           <div className="modal fade" id="editMessageModal" tabIndex="-1" aria-hidden="true">
             <div className="modal-dialog modal-dialog-centered">

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-const fallbackAvatar = 'https://via.placeholder.com/40x40.png?text=U';
+const fallbackAvatar = '/default-avatar.png';
 
 function AppNavbar({ isLoggedIn, profile }) {
   const username = profile?.username || 'User';
@@ -28,7 +28,7 @@ function AppNavbar({ isLoggedIn, profile }) {
 
         {isLoggedIn && (
           <div className="d-flex align-items-center gap-2">
-            <img src={avatar} onError={(e) => { e.currentTarget.src = fallbackAvatar; }} alt="avatar" width="36" height="36" className="rounded-circle border" />
+            <img src={avatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="avatar" width="36" height="36" className="rounded-circle border" />
             <span className="fw-semibold small">{username}</span>
           </div>
         )}

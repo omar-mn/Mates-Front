@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCurrentUser, getRooms, updateCurrentUser } from '../api';
 
-const avatarFallback = 'https://via.placeholder.com/80x80.png?text=User';
-const bannerFallback = 'https://via.placeholder.com/1200x280.png?text=Profile+Banner';
+const avatarFallback = '/default-avatar.png';
+const bannerFallback = '/default-banner.png';
 
 function Profile({ currentUser, setCurrentUser, showToast }) {
   const [profile, setProfile] = useState(currentUser || null);
@@ -101,7 +101,7 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
         <div className="p-4 d-flex flex-wrap align-items-center gap-3">
           <img
             src={profile?.profileImage || avatarFallback}
-            onError={(e) => { e.currentTarget.src = avatarFallback; }}
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback; }}
             alt="profile"
             width="88"
             height="88"

@@ -4,7 +4,7 @@ import { createRoom, deleteRoom, getRooms, toggleRoomMembership, updateRoom } fr
 
 const ROOM_CATEGORIES = ['study', 'games', 'programing', 'life issues', 'other'];
 
-const fallbackAvatar = 'https://via.placeholder.com/32x32.png?text=U';
+const fallbackAvatar = '/default-avatar.png';
 
 function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast }) {
   const navigate = useNavigate();
@@ -226,7 +226,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                     <div className="room-owner-row d-flex align-items-center gap-2">
                       <img
                         src={room.owner?.profileImage || fallbackAvatar}
-                        onError={(e) => { e.currentTarget.src = fallbackAvatar; }}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }}
                         alt="owner"
                         width="32"
                         height="32"

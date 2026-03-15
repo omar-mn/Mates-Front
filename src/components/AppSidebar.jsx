@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 
-const categories = ['games', 'tech', 'music', 'general', 'sports'];
+const categories = ['study', 'games', 'programing', 'life issues', 'other'];
 
 function SidebarContent({
   onCreateRoom,

@@ -7,7 +7,21 @@ const normalizeBase = (baseUrl, fallback) => {
 };
 
 export const API_BASE_URL = normalizeBase(import.meta.env.VITE_API_BASE_URL, DEFAULT_API_BASE);
-export const WS_BASE_URL = normalizeBase(import.meta.env.VITE_WS_BASE_URL, DEFAULT_WS_BASE);
+
+const deriveWsBaseFromApiBase = (apiBase) => {
+  try {
+    const parsed = new URL(apiBase);
+    const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${wsProtocol}//${parsed.host}/ws/`;
+  } catch {
+    return DEFAULT_WS_BASE;
+  }
+};
+
+export const WS_BASE_URL = normalizeBase(
+  import.meta.env.VITE_WS_BASE_URL,
+  deriveWsBaseFromApiBase(API_BASE_URL),
+);
 
 const getErrorMessageFromObject = (errorData, fallbackMessage) => {
   if (!errorData || typeof errorData !== 'object') return fallbackMessage;
@@ -38,7 +52,8 @@ export function getAuthHeaders() {
 export function getRoomSocketUrl(roomId) {
   const token = localStorage.getItem('accessToken') || '';
   // Room websocket endpoint used for real-time chat messages.
-  return `${WS_BASE_URL}message/${roomId}/?token=${encodeURIComponent(token)}`;
+  const encodedToken = encodeURIComponent(token);
+  return `${WS_BASE_URL}message/${roomId}/?token=${encodedToken}&access_token=${encodedToken}`;
 }
 
 // Register endpoint: POST /auth/registration/
@@ -179,9 +194,9 @@ export async function createRoom(roomData) {
   return response.json().catch(() => ({}));
 }
 
-// Room info endpoint: GET /rooms/modify/<room_id>/
+// Room info endpoint: GET /rooms/<room_id>/
 export async function getRoomDetails(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/modify/${roomId}/`, {
+  const response = await fetch(`${API_BASE_URL}rooms/${roomId}/`, {
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),

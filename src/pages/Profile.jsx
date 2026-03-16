@@ -17,10 +17,6 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
     first_name: '',
     last_name: '',
     bio: '',
-    profileImage: '',
-    profile_banner: '',
-    profileImageFile: null,
-    profileBannerFile: null,
   });
 
   const fullName = useMemo(() => {
@@ -42,8 +38,6 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
         bio: userData.bio || '',
-        profileImage: userData.profileImage || '',
-        profile_banner: userData.profile_banner || '',
       }));
 
       const rooms = await getRooms();
@@ -68,15 +62,12 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
         first_name: form.first_name,
         last_name: form.last_name,
         bio: form.bio,
-        profileImage: form.profileImageFile || form.profileImage,
-        profile_banner: form.profileBannerFile || form.profile_banner,
       };
 
       const updated = await updateCurrentUser(payload);
       setProfile(updated);
       setCurrentUser?.(updated);
       showToast?.('Profile updated successfully.', 'success');
-      setForm((prev) => ({ ...prev, profileImageFile: null, profileBannerFile: null }));
     } catch (err) {
       setError(err.message || 'Failed to update profile');
       showToast?.(err.message || 'Failed to update profile', 'danger');
@@ -134,18 +125,6 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
               <div className="col-12">
                 <label className="form-label">Bio</label>
                 <textarea className="form-control" rows="3" value={form.bio} onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))} />
-              </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label">Profile image URL (optional)</label>
-                <input className="form-control" value={form.profileImage} onChange={(e) => setForm((prev) => ({ ...prev, profileImage: e.target.value }))} />
-                <label className="form-label mt-2">Or upload image</label>
-                <input className="form-control" type="file" accept="image/*" onChange={(e) => setForm((prev) => ({ ...prev, profileImageFile: e.target.files?.[0] || null }))} />
-              </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label">Profile banner URL (optional)</label>
-                <input className="form-control" value={form.profile_banner} onChange={(e) => setForm((prev) => ({ ...prev, profile_banner: e.target.value }))} />
-                <label className="form-label mt-2">Or upload banner</label>
-                <input className="form-control" type="file" accept="image/*" onChange={(e) => setForm((prev) => ({ ...prev, profileBannerFile: e.target.files?.[0] || null }))} />
               </div>
             </div>
 

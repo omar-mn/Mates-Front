@@ -276,7 +276,7 @@ useEffect(() => {
                           )}
                         </div>
                         <div className="mt-1" style={{ whiteSpace: 'pre-wrap' }}>{message?.content || ''}</div>
-                        <div className="small text-secondary mt-1">{message?.sent_at ? new Date(message.sent_at).toLocaleString() : ''}</div>
+                        <div className="small text-secondary mt-1"> {message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''} </div>
                       </div>
 
                       {isCurrentUser && <img src={message?.user?.profileImage || getFallbackAvatar(message?.user?.username)} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(message?.user?.username); }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
@@ -294,7 +294,7 @@ useEffect(() => {
               <small className="text-secondary">Chat status: {socketState}</small>
             </div>
             <div className="d-flex gap-2 align-items-end">
-              <textarea
+              <input type="text"
                 className="form-control"
                 rows="2"
                 placeholder="Write a message..."

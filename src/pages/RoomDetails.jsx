@@ -7,7 +7,11 @@ import {
   updateMessage,
 } from '../api';
 
-const fallbackAvatar = '/default-avatar.png';
+const fallbackAvatar = 'https://ui-avatars.com/api/?name=User&background=random&color=fff';
+const getFallbackAvatar = (name) => {
+  const safeName = encodeURIComponent(name || 'User');
+  return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
+};
 
 function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   const { id } = useParams();
@@ -208,7 +212,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
             <div className="d-flex flex-wrap gap-3 align-items-center mb-2">
               <span className="room-category-pill">{room?.category || 'General'}</span>
               <span className="d-flex align-items-center gap-2">
-                <img src={room?.owner?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="owner" width="28" height="28" className="rounded-circle border" />
+                <img src={room?.owner?.profileImage || getFallbackAvatar(room?.owner?.username)} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(room?.owner?.username); }} alt="owner" width="28" height="28" className="rounded-circle border" />
                 <strong>{room?.owner?.username || 'Unknown owner'}</strong>
               </span>
             </div>
@@ -226,7 +230,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
                 return (
                   <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
                     <div className="d-flex gap-2" style={{ maxWidth: '78%' }}>
-                      {!isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
+                      {!isCurrentUser && <img src={message?.user?.profileImage || getFallbackAvatar(message?.user?.username)} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(message?.user?.username); }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
 
                       <div className={`card border-0 p-2 px-3 ${isCurrentUser ? 'chat-own-message' : ''}`} style={{ wordBreak: 'break-word' }}>
                         <div className="d-flex align-items-start justify-content-between gap-2">
@@ -251,7 +255,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
                         <div className="small text-secondary mt-1">{message?.sent_at ? new Date(message.sent_at).toLocaleString() : ''}</div>
                       </div>
 
-                      {isCurrentUser && <img src={message?.user?.profileImage || fallbackAvatar} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
+                      {isCurrentUser && <img src={message?.user?.profileImage || getFallbackAvatar(message?.user?.username)} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(message?.user?.username); }} alt="user" width="32" height="32" className="rounded-circle border align-self-end" />}
                     </div>
                   </div>
                 );

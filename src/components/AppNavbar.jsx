@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
 
-const fallbackAvatar = '/default-avatar.png';
+const getFallbackAvatar = (name) => {
+  const safeName = encodeURIComponent(name || 'User');
+  return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
+};
 
 function AppNavbar({ isLoggedIn, profile }) {
   const username = profile?.username || 'User';
-  const avatar = profile?.profileImage || fallbackAvatar;
+  const avatar = getFallbackAvatar(username);
 
   return (
     <nav className="navbar border-bottom app-navbar sticky-top">

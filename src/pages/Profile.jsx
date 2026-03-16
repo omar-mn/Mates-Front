@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCurrentUser, getRooms, updateCurrentUser } from '../api';
 
-const avatarFallback = '/default-avatar.png';
-const bannerFallback = '/default-banner.png';
+const getFallbackAvatar = (name) => {
+  const safeName = encodeURIComponent(name || 'User');
+  return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
+};
 
 function Profile({ currentUser, setCurrentUser, showToast }) {
   const [profile, setProfile] = useState(currentUser || null);
@@ -93,15 +95,15 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
         <img
-          src={profile?.profile_banner || bannerFallback}
-          onError={(e) => { e.currentTarget.src = bannerFallback; }}
+          src={profile?.profile_banner || getFallbackAvatar(profile?.username)}
+          onError={(e) => { e.currentTarget.src = getFallbackAvatar(profile?.username); }}
           alt="profile banner"
           style={{ height: '200px', objectFit: 'cover' }}
         />
         <div className="p-4 d-flex flex-wrap align-items-center gap-3">
           <img
-            src={profile?.profileImage || avatarFallback}
-            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback; }}
+            src={profile?.profileImage || getFallbackAvatar(profile?.username)}
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(profile?.username); }}
             alt="profile"
             width="88"
             height="88"

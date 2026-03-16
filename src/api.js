@@ -1,5 +1,5 @@
-const DEFAULT_API_BASE = 'http://127.0.0.1:8000/api/';
-const DEFAULT_WS_BASE = 'ws://127.0.0.1:8000/ws/';
+const DEFAULT_API_BASE = 'https://unisotropous-lauren-persuadably.ngrok-free.dev/api/';
+const DEFAULT_WS_BASE = 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
 
 const normalizeBase = (baseUrl, fallback) => {
   const value = baseUrl || fallback;
@@ -46,6 +46,7 @@ export function getAuthHeaders() {
   const token = localStorage.getItem('accessToken') || '';
   return {
     Authorization: `Bearer ${token}`,
+    'ngrok-skip-browser-warning': 'true',
   };
 }
 

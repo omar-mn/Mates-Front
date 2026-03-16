@@ -4,7 +4,10 @@ import { createRoom, deleteRoom, getRooms, toggleRoomMembership, updateRoom } fr
 
 const ROOM_CATEGORIES = ['study', 'games', 'programing', 'life issues', 'other'];
 
-const fallbackAvatar = '/default-avatar.png';
+const getFallbackAvatar = (name) => {
+  const safeName = encodeURIComponent(name || 'User');
+  return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
+};
 
 function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast }) {
   const navigate = useNavigate();
@@ -21,6 +24,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
   const [editingRoom, setEditingRoom] = useState(null);
   const [deletingRoom, setDeletingRoom] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  
 
   const currentUsername = currentUser?.username || '';
 
@@ -225,8 +229,8 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
 
                     <div className="room-owner-row d-flex align-items-center gap-2">
                       <img
-                        src={room.owner?.profileImage || fallbackAvatar}
-                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar; }}
+                        src={room.owner?.profileImage || getFallbackAvatar(room.owner?.username)}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(room.owner?.username); }}
                         alt="owner"
                         width="32"
                         height="32"

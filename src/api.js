@@ -120,27 +120,14 @@ export async function getCurrentUser() {
 
 // Update current user endpoint: PUT/PATCH /auth/user/
 export async function updateCurrentUser(payload) {
-  const hasFile = Object.values(payload).some((value) => value instanceof window.File);
-
-  const options = {
+  const response = await fetch(`${API_BASE_URL}auth/user/`, {
     method: 'PATCH',
     headers: {
+      'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
-  };
-
-  if (hasFile) {
-    const formData = new window.FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') formData.append(key, value);
-    });
-    options.body = formData;
-  } else {
-    options.headers['Content-Type'] = 'application/json';
-    options.body = JSON.stringify(payload);
-  }
-
-  const response = await fetch(`${API_BASE_URL}auth/user/`, options);
+    body: JSON.stringify(payload),
+  });
 
   if (!response.ok) throw new Error(await parseApiError(response, 'Failed to update profile'));
   return response.json().catch(() => ({}));

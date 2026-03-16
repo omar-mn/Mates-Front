@@ -70,6 +70,32 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   }, [id]);
 
   useEffect(() => {
+  if (loading) return;
+
+  const node = messageListRef.current;
+  if (!node) return;
+
+  node.scrollTop = node.scrollHeight;
+}, [loading, id]);
+
+useEffect(() => {
+  const node = messageListRef.current;
+  if (!node) return;
+
+  const distanceFromBottom =
+    node.scrollHeight - node.scrollTop - node.clientHeight;
+
+  const isNearBottom = distanceFromBottom < 120;
+
+  if (isNearBottom) {
+    node.scrollTo({
+      top: node.scrollHeight,
+      behavior: "smooth",
+    });
+  }
+}, [messages]);
+
+  useEffect(() => {
     if (!id) return;
 
     const socketUrl = getRoomSocketUrl(id);

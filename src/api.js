@@ -14,7 +14,7 @@ const deriveWsBaseFromApiBase = (apiBase) => {
     const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${wsProtocol}//${parsed.host}/ws/`;
   } catch {
-    return 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
+    return DEFAULT_WS_BASE;
   }
 };
 
@@ -53,7 +53,9 @@ export function getAuthHeaders() {
 export function getRoomSocketUrl(roomId) {
   const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
   const encodedToken = encodeURIComponent(token);
-  return `${WS_BASE_URL}message/${encodeURIComponent(roomId)}/?token=${encodedToken}`;
+  const url = `${WS_BASE_URL}message/${encodeURIComponent(roomId)}/?token=${encodedToken}`;
+
+  return url;
 }
 
 // Register endpoint: POST /auth/registration/

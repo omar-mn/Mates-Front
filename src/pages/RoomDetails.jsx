@@ -5,6 +5,9 @@ import {
   getRoomDetails,
   getRoomMessages,
   updateMessage,
+  WS_BASE_URL,
+  API_BASE_URL,
+  getRoomSocketUrl
 } from '../api';
 
 const getFallbackAvatar = (name) => {
@@ -69,17 +72,13 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   useEffect(() => {
     if (!id) return;
 
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const roomId = encodeURIComponent(id);
-    const socketUrl = `${protocol}://127.0.0.1:8000/ws/message/${roomId}/?token=${encodeURIComponent(token)}`;
-    window.console.log('[RoomDetails] final socket URL:', socketUrl);
+    const socketUrl = getRoomSocketUrl(id);
 
     const socket = new window.WebSocket(socketUrl);
     wsRef.current = socket;
 
     socket.onopen = () => {
-      window.console.log('[RoomDetails] websocket onopen');
+      // window.console.log('[RoomDetails] websocket onopen');
       setSocketState('connected');
       showToast?.('Connected to room chat.', 'info');
     };
@@ -112,13 +111,13 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   };
 
     socket.onerror = (event) => {
-      window.console.log('[RoomDetails] websocket onerror:', event);
+      // window.console.log('[RoomDetails] websocket onerror:', event);
       setSocketState('error');
       showToast?.('Chat connection error.', 'danger');
     };
 
     socket.onclose = (event) => {
-      window.console.log('[RoomDetails] websocket onclose:', event);
+      // window.console.log('[RoomDetails] websocket onclose:', event);
       setSocketState('disconnected');
       showToast?.('Chat disconnected.', 'info');
     };

@@ -7,7 +7,6 @@ import {
   updateMessage,
 } from '../api';
 
-const fallbackAvatar = 'https://ui-avatars.com/api/?name=User&background=random&color=fff';
 const getFallbackAvatar = (name) => {
   const safeName = encodeURIComponent(name || 'User');
   return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;

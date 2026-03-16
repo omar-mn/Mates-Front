@@ -14,7 +14,7 @@ const deriveWsBaseFromApiBase = (apiBase) => {
     const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${wsProtocol}//${parsed.host}/ws/`;
   } catch {
-    return DEFAULT_WS_BASE;
+    return 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
   }
 };
 

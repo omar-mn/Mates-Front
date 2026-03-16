@@ -193,9 +193,9 @@ export async function createRoom(roomData) {
   return response.json().catch(() => ({}));
 }
 
-// Room info endpoint: GET /rooms/<room_id>/
+// Room info endpoint: GET /room/<room_id>/
 export async function getRoomDetails(roomId) {
-  const response = await fetch(`${API_BASE_URL}room/${roomId}/`, {
+  const response = await fetch(`${API_BASE_URL}rooms/room/${roomId}/`, {
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),

@@ -111,7 +111,6 @@ export async function getCurrentUser() {
   const response = await fetch(`${API_BASE_URL}auth/user/`, {
     headers: {
       'Content-Type': 'application/json',
-      // Authorization header uses stored token from login.
       ...getAuthHeaders(),
     },
   });

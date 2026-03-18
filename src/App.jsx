@@ -11,6 +11,7 @@ import PlaceholderPage from './pages/PlaceholderPage';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
 import RoomDetails from './pages/RoomDetails';
+import RoomInfo from './pages/RoomInfo';
 import Settings from './pages/Settings';
 import Updates from './pages/Updates';
 
@@ -129,6 +130,18 @@ function App() {
             element={(
               <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <RoomDetails
+                  currentUser={profile}
+                  onApiStatusChange={setApiStatus}
+                  showToast={showToast}
+                />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/room/:id/info"
+            element={(
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <RoomInfo
                   currentUser={profile}
                   onApiStatusChange={setApiStatus}
                   showToast={showToast}

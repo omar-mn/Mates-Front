@@ -255,7 +255,7 @@ export async function getOldRequests(roomId) {
 
 export async function handleRoomRequest(roomId, requestId, state) {
   const response = await fetch(`${API_BASE_URL}rooms/reqhandel/${roomId}/${requestId}/`, {
-    method: 'POST',
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),

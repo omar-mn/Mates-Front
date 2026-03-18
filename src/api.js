@@ -1,6 +1,6 @@
 const BACKEND_ORIGIN = 'https://unisotropous-lauren-persuadably.ngrok-free.dev';
 const DEFAULT_API_BASE = `${BACKEND_ORIGIN}/api/`;
-const DEFAULT_WS_BASE = 'ws://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
+const DEFAULT_WS_BASE = 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
 const FALLBACK_AVATAR = 'https://ui-avatars.com/api/?name=User&background=6f33df&color=fff';
 
 const normalizeBase = (baseUrl, fallback) => {
@@ -50,6 +50,7 @@ export function getAuthHeaders() {
   const token = localStorage.getItem('accessToken') || '';
   return {
     Authorization: `Bearer ${token}`,
+    'ngrok-skip-browser-warning': 'true',
   };
 }
 

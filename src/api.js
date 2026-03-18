@@ -1,6 +1,6 @@
-const BACKEND_ORIGIN = 'http://127.0.0.1:8000';
+const BACKEND_ORIGIN = 'https://unisotropous-lauren-persuadably.ngrok-free.dev';
 const DEFAULT_API_BASE = `${BACKEND_ORIGIN}/api/`;
-const DEFAULT_WS_BASE = 'ws://127.0.0.1:8000/ws/';
+const DEFAULT_WS_BASE = 'ws://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
 const FALLBACK_AVATAR = 'https://ui-avatars.com/api/?name=User&background=6f33df&color=fff';
 
 const normalizeBase = (baseUrl, fallback) => {

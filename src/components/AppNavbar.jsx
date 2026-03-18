@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { resolveMediaUrl } from '../api';
 
 const getFallbackAvatar = (name) => {
   const safeName = encodeURIComponent(name || 'User');
@@ -7,7 +8,8 @@ const getFallbackAvatar = (name) => {
 
 function AppNavbar({ isLoggedIn, profile }) {
   const username = profile?.username || 'User';
-  const avatar = getFallbackAvatar(username);
+  const fallbackAvatar = getFallbackAvatar(username);
+  const avatar = resolveMediaUrl(profile?.profileImage, fallbackAvatar);
 
   return (
     <nav className="navbar border-bottom app-navbar sticky-top">

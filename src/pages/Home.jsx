@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createRoom, deleteRoom, getRooms, toggleRoomMembership, updateRoom } from '../api';
+import { createRoom, deleteRoom, getRooms, joinRoom, leaveRoom, resolveMediaUrl, updateRoom } from '../api';
 
 const ROOM_CATEGORIES = ['study', 'games', 'programing', 'life issues', 'other'];
 
@@ -9,6 +9,8 @@ const getFallbackAvatar = (name) => {
   return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
 };
 
+const getActiveMembers = (members = []) => members.filter((member) => !member?.leftDate);
+
 function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast }) {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
@@ -16,15 +18,15 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [togglingRoomId, setTogglingRoomId] = useState(null);
+  const [joinGateRoom, setJoinGateRoom] = useState(null);
 
-  const [newRoom, setNewRoom] = useState({ name: '', category: ROOM_CATEGORIES[0], description: '' });
+  const [newRoom, setNewRoom] = useState({ name: '', category: ROOM_CATEGORIES[0], description: '', private: false });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
   const [editingRoom, setEditingRoom] = useState(null);
   const [deletingRoom, setDeletingRoom] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  
 
   const currentUsername = currentUser?.username || '';
 
@@ -36,10 +38,12 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
       const data = await getRooms();
       setRooms(data || []);
       onApiStatusChange('connected');
+      return data || [];
     } catch (err) {
       setError(err.message);
       onApiStatusChange('error');
       showToast?.(err.message || 'Failed to load rooms', 'danger');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -61,6 +65,14 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
       }
     }
   }, [createRoomRequest]);
+
+  useEffect(() => {
+    if (!joinGateRoom || !window.bootstrap) return;
+    const modalEl = document.getElementById('joinGateModal');
+    if (modalEl) {
+      window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+  }, [joinGateRoom]);
 
   const filteredRooms = useMemo(() => {
     const text = search.toLowerCase();
@@ -90,31 +102,49 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
         name: newRoom.name.trim(),
         description: newRoom.description.trim(),
         category: newRoom.category,
+        private: Boolean(newRoom.private),
       });
-      setNewRoom({ name: '', category: ROOM_CATEGORIES[0], description: '' });
+      setNewRoom({ name: '', category: ROOM_CATEGORIES[0], description: '', private: false });
       window.bootstrap.Modal.getOrCreateInstance(document.getElementById('createRoomModal')).hide();
-      showToast?.('Room created successfully.', 'success');
+      showToast?.('Room created', 'success');
       loadRooms();
     } catch (err) {
       setCreateError(err.message);
       onApiStatusChange('error');
-      showToast?.(err.message || 'Failed to create room', 'danger');
+      showToast?.(err.message || 'Room create failed', 'danger');
     } finally {
       setCreating(false);
     }
   };
 
-  const submitJoinLeave = async (e, room) => {
-    e.stopPropagation();
+  const handleOpenRoom = (room) => {
+    if (room.is_member) {
+      navigate(`/room/${room.id}`);
+      return;
+    }
+
+    setJoinGateRoom(room);
+    showToast?.(room.private ? 'You need to send a join request first.' : 'You need to join this room first.', 'info');
+  };
+
+  const handleJoinLeave = async (room, event) => {
+    event?.stopPropagation?.();
     setTogglingRoomId(room.id);
 
     try {
-      const wasMember = Boolean(room.is_member);
-      await toggleRoomMembership(room.id);
-      setRooms((prev) => prev.map((item) => (item.id === room.id ? { ...item, is_member: !wasMember } : item)));
-      showToast?.(wasMember ? 'Left room' : 'Joined room', 'success');
+      if (room.is_member) {
+        const response = await leaveRoom(room.id);
+        await loadRooms();
+        showToast?.(response?.message || 'Left room', 'success');
+      } else {
+        const response = await joinRoom(room.id);
+        const refreshedRooms = await loadRooms();
+        const refreshedRoom = refreshedRooms.find((item) => item.id === room.id);
+        const message = response?.message || (room.private && !refreshedRoom?.is_member ? 'Join request sent' : 'Joined room');
+        showToast?.(message, 'success');
+      }
     } catch (err) {
-      showToast?.(err.message || 'Failed to update room membership', 'danger');
+      showToast?.(err.message || 'Failed join/leave', 'danger');
     } finally {
       setTogglingRoomId(null);
     }
@@ -133,6 +163,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
         name: editingRoom.name.trim(),
         description: editingRoom.description || '',
         category: editingRoom.category,
+        private: Boolean(editingRoom.private),
       });
 
       setRooms((prev) => prev.map((room) => (room.id === editingRoom.id ? { ...room, ...updated } : room)));
@@ -185,6 +216,10 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
         <div className="row g-3">
           {filteredRooms.map((room) => {
             const isOwner = currentUsername && room.owner?.username === currentUsername;
+            const activeMembers = getActiveMembers(room.members);
+            const previewMembers = activeMembers.slice(-5);
+            const remainingMembers = Math.max(activeMembers.length - previewMembers.length, 0);
+            const membersCount = room.membersCount ?? activeMembers.length;
 
             return (
               <div key={room.id} className="col-12 col-lg-6">
@@ -192,14 +227,14 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                   className="card room-card h-100 border-0 shadow-sm rounded-4"
                   role="button"
                   tabIndex={0}
-                  onClick={() => navigate(`/room/${room.id}`)}
+                  onClick={() => handleOpenRoom(room)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') navigate(`/room/${room.id}`);
+                    if (e.key === 'Enter' || e.key === ' ') handleOpenRoom(room);
                   }}
                 >
                   <div className="card-body d-flex flex-column gap-3">
                     <div className="d-flex justify-content-between align-items-start gap-2">
-                      <button className="btn btn-link text-start p-0 text-decoration-none room-title" onClick={(e) => { e.stopPropagation(); navigate(`/room/${room.id}`); }}>
+                      <button className="btn btn-link text-start p-0 text-decoration-none room-title" onClick={(e) => { e.stopPropagation(); handleOpenRoom(room); }}>
                         {room.name || 'Untitled Room'}
                       </button>
 
@@ -215,6 +250,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                                 name: room.name || '',
                                 description: room.description || '',
                                 category: room.category || ROOM_CATEGORIES[0],
+                                private: Boolean(room.private),
                               });
                               window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editRoomModal')).show();
                             }}>Edit room</button></li>
@@ -229,7 +265,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
 
                     <div className="room-owner-row d-flex align-items-center gap-2">
                       <img
-                        src={room.owner?.profileImage || getFallbackAvatar(room.owner?.username)}
+                        src={resolveMediaUrl(room.owner?.profileImage, getFallbackAvatar(room.owner?.username))}
                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(room.owner?.username); }}
                         alt="owner"
                         width="32"
@@ -239,19 +275,40 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                       <small className="fw-semibold">{room.owner?.username || 'Unknown owner'}</small>
                     </div>
 
-                    <div className="room-meta d-flex align-items-center gap-2">
+                    <div className="room-meta d-flex flex-wrap align-items-center gap-2">
                       <span className="room-category-pill">{room.category || 'General'}</span>
-                      <span className="room-meta-dot" aria-hidden="true">•</span>
-                      <small className="text-secondary">Open room</small>
+                      <span className={`room-privacy-badge ${room.private ? 'is-private' : 'is-public'}`}>
+                        <i className={`bi ${room.private ? 'bi-lock-fill' : 'bi-globe2'}`} />
+                        {room.private ? 'Private' : 'Public'}
+                      </span>
                     </div>
 
                     <p className="room-desc text-secondary flex-grow-1 mb-0">{room.description || 'No description yet.'}</p>
 
-                    <div className="room-footer gap-2">
-                      <button className="btn btn-sm btn-outline-secondary" onClick={(e) => { e.stopPropagation(); navigate(`/room/${room.id}`); }}>Open Room</button>
-                      <button className="btn btn-outline-primary rounded-3 px-4" onClick={(e) => submitJoinLeave(e, room)} disabled={togglingRoomId === room.id}>
-                        {togglingRoomId === room.id ? '...' : (room.is_member ? 'Leave' : 'Join')}
-                      </button>
+                    <div className="member-preview-row d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                      <div className="d-flex align-items-center gap-3 flex-wrap">
+                        <div className="member-avatar-stack" aria-hidden="true">
+                          {previewMembers.map((member, index) => (
+                            <img
+                              key={`${member?.user?.username || index}-${index}`}
+                              src={resolveMediaUrl(member?.user?.profileImage, getFallbackAvatar(member?.user?.username))}
+                              alt={member?.user?.username || 'member'}
+                              className="member-stack-avatar"
+                              style={{ zIndex: index + 1 }}
+                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(member?.user?.username); }}
+                            />
+                          ))}
+                          {remainingMembers > 0 && <span className="member-stack-count">+{remainingMembers}</span>}
+                        </div>
+                        <small className="text-secondary">{membersCount} member{membersCount === 1 ? '' : 's'}</small>
+                      </div>
+
+                      <div className="room-footer gap-2">
+                        <button className="btn btn-sm btn-outline-secondary" onClick={(e) => { e.stopPropagation(); handleOpenRoom(room); }}>Open Room</button>
+                        <button className="btn btn-outline-primary rounded-3 px-4" onClick={(e) => handleJoinLeave(room, e)} disabled={togglingRoomId === room.id}>
+                          {togglingRoomId === room.id ? '...' : room.is_member ? 'Leave' : room.private ? 'Request Join' : 'Join'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -278,6 +335,10 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                   {ROOM_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
                 <textarea className="form-control" placeholder="Description" rows="3" value={newRoom.description} onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })} />
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" role="switch" id="privateRoomSwitch" checked={newRoom.private} onChange={(e) => setNewRoom({ ...newRoom, private: e.target.checked })} />
+                  <label className="form-check-label" htmlFor="privateRoomSwitch">Private Room</label>
+                </div>
               </div>
               <div className="modal-footer">
                 <button className="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
@@ -302,6 +363,10 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
                   {ROOM_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
                 <textarea className="form-control" rows="3" value={editingRoom?.description || ''} onChange={(e) => setEditingRoom((prev) => ({ ...prev, description: e.target.value }))} />
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" role="switch" id="editPrivateRoomSwitch" checked={Boolean(editingRoom?.private)} onChange={(e) => setEditingRoom((prev) => ({ ...prev, private: e.target.checked }))} />
+                  <label className="form-check-label" htmlFor="editPrivateRoomSwitch">Private Room</label>
+                </div>
               </div>
               <div className="modal-footer">
                 <button className="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
@@ -325,6 +390,38 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
             <div className="modal-footer">
               <button className="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
               <button className="btn btn-danger" onClick={confirmDeleteRoom}>Delete room</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal fade room-info-modal" id="joinGateModal" tabIndex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content rounded-4">
+            <div className="modal-header border-0 pb-0">
+              <h5 className="modal-title">Room access locked</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" onClick={() => setJoinGateRoom(null)} />
+            </div>
+            <div className="modal-body text-center py-4">
+              <div className="display-6 mb-3"><i className={`bi ${joinGateRoom?.private ? 'bi-lock-fill' : 'bi-door-open-fill'}`} /></div>
+              <h4 className="mb-2">{joinGateRoom?.private ? 'You need to send a join request first.' : 'You need to join this room first.'}</h4>
+              <p className="text-secondary mb-0">Join the room before opening its chat. Private rooms will send a request to the owner or admin team.</p>
+            </div>
+            <div className="modal-footer justify-content-center border-0 pt-0">
+              <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal" onClick={() => setJoinGateRoom(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!joinGateRoom || togglingRoomId === joinGateRoom.id}
+                onClick={async (e) => {
+                  if (!joinGateRoom) return;
+                  await handleJoinLeave(joinGateRoom, e);
+                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('joinGateModal')).hide();
+                  setJoinGateRoom(null);
+                }}
+              >
+                {togglingRoomId === joinGateRoom?.id ? 'Please wait...' : joinGateRoom?.private ? 'Request Join' : 'Join'}
+              </button>
             </div>
           </div>
         </div>

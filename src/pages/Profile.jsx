@@ -1,17 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getCurrentUser, getRooms, resolveMediaUrl, updateCurrentUser } from '../api';
+import { useNavigate } from 'react-router-dom';
+import {
+  cancelJoinRequest,
+  getCurrentUser,
+  getJoinedRooms,
+  getMyPendingRequests,
+  getRooms,
+  getDefaultBanner,
+  resolveMediaUrl,
+  updateCurrentUser,
+} from '../api';
 
 const getFallbackAvatar = (name) => {
   const safeName = encodeURIComponent(name || 'User');
   return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
 };
 
-function Profile({ currentUser, setCurrentUser, showToast }) {
+function Profile({ currentUser, setCurrentUser, showToast, onJoinedRoomsChange }) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(currentUser || null);
   const [myRooms, setMyRooms] = useState([]);
+  const [joinedRooms, setJoinedRooms] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [cancelingRequestId, setCancelingRequestId] = useState(null);
+  const [requestToCancel, setRequestToCancel] = useState(null);
 
   const [form, setForm] = useState({
     first_name: '',
@@ -40,10 +55,19 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
         bio: userData.bio || '',
       }));
 
-      const rooms = await getRooms();
+      const [rooms, joinedRoomsData, pendingRequestsData] = await Promise.all([
+        getRooms(),
+        getJoinedRooms(),
+        getMyPendingRequests(),
+      ]);
+
       setMyRooms((rooms || []).filter((room) => room.owner?.username === userData.username));
+      setJoinedRooms(joinedRoomsData || []);
+      setPendingRequests(pendingRequestsData || []);
+      onJoinedRoomsChange?.(joinedRoomsData || []);
     } catch (err) {
       setError(err.message || 'Failed to load profile');
+      showToast?.(err.message || 'Failed to load profile', 'danger');
     } finally {
       setLoading(false);
     }
@@ -76,18 +100,35 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
     }
   };
 
+  const confirmCancelRequest = async () => {
+    if (!requestToCancel) return;
+
+    setCancelingRequestId(requestToCancel.id);
+    try {
+      await cancelJoinRequest(requestToCancel.id);
+      setPendingRequests((prev) => prev.filter((request) => request.id !== requestToCancel.id));
+      window.bootstrap.Modal.getOrCreateInstance(document.getElementById('cancelJoinRequestModal')).hide();
+      showToast?.('Request canceled', 'success');
+    } catch (err) {
+      showToast?.(err.message || 'Failed to cancel request', 'danger');
+    } finally {
+      setCancelingRequestId(null);
+      setRequestToCancel(null);
+    }
+  };
+
   if (loading) {
     return <div className="container py-5 text-center"><div className="spinner-border" /></div>;
   }
 
   return (
-    <div className="container-fluid py-4 px-3 px-lg-4">
+    <div className="container-fluid py-4 px-3 px-lg-4 profile-page-shell">
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
         <img
-          src={resolveMediaUrl(profile?.profile_banner, getFallbackAvatar(profile?.username))}
-          onError={(e) => { e.currentTarget.src = getFallbackAvatar(profile?.username); }}
+          src={resolveMediaUrl(profile?.profile_banner, getDefaultBanner(profile?.username))}
+          onError={(e) => { e.currentTarget.src = getDefaultBanner(profile?.username); }}
           alt="profile banner"
           style={{ height: '200px', objectFit: 'cover' }}
         />
@@ -110,8 +151,8 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
       </div>
 
       <div className="row g-3">
-        <div className="col-12 col-lg-7">
-          <form className="card border-0 shadow-sm rounded-4 p-4" onSubmit={handleSubmit}>
+        <div className="col-12 col-xl-6">
+          <form className="card border-0 shadow-sm rounded-4 p-4 h-100" onSubmit={handleSubmit}>
             <h5 className="mb-3">Edit profile</h5>
             <div className="row g-3">
               <div className="col-12 col-md-6">
@@ -134,7 +175,7 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
           </form>
         </div>
 
-        <div className="col-12 col-lg-5">
+        <div className="col-12 col-xl-6">
           <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
             <h5 className="mb-3">My Rooms</h5>
             {myRooms.length ? (
@@ -147,6 +188,107 @@ function Profile({ currentUser, setCurrentUser, showToast }) {
                 ))}
               </ul>
             ) : <div className="alert alert-info mb-0">No rooms created yet.</div>}
+          </div>
+        </div>
+
+        <div className="col-12 col-xl-7">
+          <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+              <h5 className="mb-0">Joined Rooms</h5>
+              <span className="text-secondary small">{joinedRooms.length} room{joinedRooms.length === 1 ? '' : 's'}</span>
+            </div>
+            <div className="d-grid gap-3">
+              {joinedRooms.length ? joinedRooms.map((item) => (
+                <button
+                  key={item.room?.id || item.id}
+                  className="joined-room-card text-start"
+                  onClick={() => navigate(`/room/${item.room?.id}`)}
+                >
+                  <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                      <div className="fw-semibold fs-5">{item.room?.name || 'Room'}</div>
+                      <div className="d-flex gap-2 flex-wrap mt-2">
+                        <span className="room-category-pill">{item.room?.category || 'General'}</span>
+                        <span className={`room-privacy-badge ${item.room?.private ? 'is-private' : 'is-public'}`}>
+                          <i className={`bi ${item.room?.private ? 'bi-lock-fill' : 'bi-globe2'}`} />
+                          {item.room?.private ? 'Private' : 'Public'}
+                        </span>
+                        <span className="request-state-badge state-neutral text-capitalize">{item.role || 'member'}</span>
+                      </div>
+                    </div>
+                    <span className="text-secondary small">{item.room?.membersCount ?? 0} members</span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2 mt-3 text-secondary small">
+                    <img
+                      src={resolveMediaUrl(item.room?.owner?.profileImage, getFallbackAvatar(item.room?.owner?.username))}
+                      alt={item.room?.owner?.username || 'owner'}
+                      width="34"
+                      height="34"
+                      className="rounded-circle border"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(item.room?.owner?.username); }}
+                    />
+                    <span>Owned by <strong className="text-light">{item.room?.owner?.username || 'Unknown'}</strong></span>
+                  </div>
+                </button>
+              )) : <div className="alert alert-info mb-0">You have not joined any rooms yet.</div>}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-xl-5">
+          <div className="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+              <h5 className="mb-0">My Join Requests</h5>
+              <span className="text-secondary small">{pendingRequests.length} pending</span>
+            </div>
+            <div className="d-grid gap-3">
+              {pendingRequests.length ? pendingRequests.map((request) => (
+                <div key={request.id} className="request-card request-card-column">
+                  <div>
+                    <div className="fw-semibold">{request.room?.name || 'Room'}</div>
+                    <div className="d-flex gap-2 flex-wrap mt-2">
+                      <span className="room-category-pill">{request.room?.category || 'General'}</span>
+                      {request.room?.private && (
+                        <span className="room-privacy-badge is-private">
+                          <i className="bi bi-lock-fill" />
+                          Private
+                        </span>
+                      )}
+                      <span className="request-state-badge state-pending">{request.state || 'pending'}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-outline-danger btn-sm align-self-start align-self-md-center"
+                    onClick={() => {
+                      setRequestToCancel(request);
+                      window.bootstrap.Modal.getOrCreateInstance(document.getElementById('cancelJoinRequestModal')).show();
+                    }}
+                  >
+                    Cancel Request
+                  </button>
+                </div>
+              )) : <div className="alert alert-info mb-0">You have no pending requests.</div>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="modal fade" id="cancelJoinRequestModal" tabIndex="-1" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content rounded-4">
+            <div className="modal-header">
+              <h5 className="modal-title">Cancel join request</h5>
+              <button className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+            </div>
+            <div className="modal-body">
+              Are you sure you want to cancel your request for <strong>{requestToCancel?.room?.name || 'this room'}</strong>?
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal">Keep request</button>
+              <button className="btn btn-danger" onClick={confirmCancelRequest} disabled={cancelingRequestId === requestToCancel?.id}>
+                {cancelingRequestId === requestToCancel?.id ? 'Canceling...' : 'Cancel Request'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

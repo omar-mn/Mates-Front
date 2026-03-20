@@ -24,9 +24,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
   const wsRef = useRef(null);
   const messageListRef = useRef(null);
-  const messagesEndRef = useRef(null);
-  const shouldScrollOnNextRenderRef = useRef(false);
-  const scrollBehaviorRef = useRef('auto');
 
   const currentUsername = currentUser?.username || '';
   const currentUserId = getUserId(currentUser);
@@ -54,11 +51,23 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
     return distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
   };
+  
+  const scrollToBottomInstant = () => {
+  const node = messageListRef.current;
+  if (!node) return;
+  node.scrollTop = node.scrollHeight;
+};
 
-  const scheduleScrollToBottom = (behavior = 'auto') => {
-    shouldScrollOnNextRenderRef.current = true;
-    scrollBehaviorRef.current = behavior;
-  };
+const scrollToBottomSmooth = () => {
+  const node = messageListRef.current;
+  if (!node) return;
+
+  node.scrollTo({
+    top: node.scrollHeight,
+    behavior: 'smooth',
+  });
+};
+
 
   const loadRoom = async () => {
     setLoading(true);
@@ -77,7 +86,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       const messageData = await getRoomMessages(id);
       setMessages(messageData || []);
-      scheduleScrollToBottom('auto');
       onApiStatusChange?.('connected');
     } catch (err) {
       setError(err.message || 'Failed to load room');
@@ -94,15 +102,37 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
   }, [id]);
 
   useEffect(() => {
-    if (!shouldScrollOnNextRenderRef.current) return undefined;
+  if (loading) return;
+  if (!canAccessRoom) return;
+  if (!sortedMessages.length) return;
 
-    const rafId = window.requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: scrollBehaviorRef.current, block: 'end' });
-      shouldScrollOnNextRenderRef.current = false;
-    });
+  const t1 = setTimeout(() => {
+    scrollToBottomInstant();
 
-    return () => window.cancelAnimationFrame(rafId);
-  }, [sortedMessages]);
+    const t2 = setTimeout(() => {
+      scrollToBottomInstant();
+    }, 50);
+
+    return () => clearTimeout(t2);
+  }, 0);
+
+  return () => clearTimeout(t1);
+}, [loading, id, canAccessRoom, sortedMessages.length]);
+
+useEffect(() => {
+  if (loading) return;
+
+  const node = messageListRef.current;
+  if (!node) return;
+  if (!sortedMessages.length) return;
+
+  const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
+  const nearBottom = distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
+
+  if (nearBottom) {
+    scrollToBottomSmooth();
+  }
+}, [sortedMessages, loading]);
 
   useEffect(() => {
     if (!id || !canAccessRoom) return undefined;
@@ -115,26 +145,41 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     };
 
     socket.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data);
-        const incoming = parsed?.type === 'chat_message' && parsed?.message ? parsed.message : parsed?.content ? parsed : null;
+  try {
+    const parsed = JSON.parse(event.data);
+    const incoming =
+      parsed?.type === 'chat_message' && parsed?.message
+        ? parsed.message
+        : parsed?.content
+        ? parsed
+        : null;
 
-        if (!incoming) return;
+    if (!incoming) return;
 
-        const senderId = getUserId(incoming?.user);
-        const senderUsername = incoming?.user?.username || '';
-        const isOwnMessage = (currentUserId && senderId && senderId === currentUserId) || (currentUsername && senderUsername === currentUsername);
-        const shouldAutoScroll = isOwnMessage || isNearBottom();
+    const senderId = getUserId(incoming?.user);
+    const senderUsername = incoming?.user?.username || '';
+    const isOwnMessage =
+      (currentUserId && senderId && senderId === currentUserId) ||
+      (currentUsername && senderUsername === currentUsername);
 
-        setMessages((prev) => (incoming?.id && prev.some((msg) => msg.id === incoming.id) ? prev : [...prev, incoming]));
+    const shouldAutoScroll = isOwnMessage || isNearBottom();
 
-        if (shouldAutoScroll) {
-          scheduleScrollToBottom(isOwnMessage ? 'smooth' : 'auto');
-        }
-      } catch (err) {
-        window.console.error('[RoomDetails] failed to parse websocket payload:', err);
+    setMessages((prev) => {
+      if (incoming?.id && prev.some((msg) => msg.id === incoming.id)) {
+        return prev;
       }
-    };
+      return [...prev, incoming];
+    });
+
+    if (shouldAutoScroll) {
+      setTimeout(() => {
+        scrollToBottomSmooth();
+      }, 30);
+    }
+  } catch (err) {
+    window.console.error('[RoomDetails] failed to parse websocket payload:', err);
+  }
+};
 
     socket.onerror = () => {
       setSocketState('error');
@@ -167,7 +212,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     }
 
     wsRef.current.send(JSON.stringify({ content: trimmed }));
-    scheduleScrollToBottom('smooth');
     setContent('');
   };
 
@@ -245,7 +289,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
               const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
 
               return (
-                <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex chat-message-row chat-message-appear ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                <div key={message.id || index} className={`d-flex chat-message-row chat-message-appear ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
                   <div className="d-flex gap-2 chat-message-wrap">
                     {!isCurrentUser && (
                       <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
@@ -303,7 +347,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
             })}
 
             {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
-            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
 
           <form className="chat-input-bar" onSubmit={handleSend}>

@@ -607,11 +607,11 @@ textarea::placeholder {
   }
 
   .chat-message-wrap {
-    max-width: 88%;
+    max-width: 85%;
   }
 
   .chat-message-bubble {
-    padding: 0.85rem 0.95rem !important;
+    padding: 6px 10px !important;
   }
 
   .member-preview-row {
@@ -784,11 +784,12 @@ textarea::placeholder {
 }
 
 .chat-message-wrap {
-  max-width: min(900px, 84%);
+  max-width: min(900px, 70%);
 }
 
 .chat-message-bubble {
   background: linear-gradient(160deg, rgba(27, 27, 40, 0.96), rgba(18, 18, 27, 0.94));
+  padding: 6px 10px !important;
 }
 
 @media (max-width: 991.98px) {
@@ -830,7 +831,7 @@ textarea::placeholder {
 }
 
   .chat-message-wrap {
-    max-width: 92%;
+    max-width: 85%;
   }
 }
 
@@ -941,7 +942,7 @@ textarea::placeholder {
 }
 
 .chat-message {
-  border-radius: 1.1rem;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
 }
@@ -950,10 +951,12 @@ textarea::placeholder {
   align-self: flex-end;
   background: linear-gradient(60deg, rgba(70, 34, 124, 0.94), rgba(104, 29, 226, 0.96));
   border-color: rgb(177, 109, 255);
+  border-bottom-right-radius: 6px;
 }
 
 .chat-message.other {
   background: linear-gradient(160deg, rgba(27, 27, 40, 0.96), rgba(18, 18, 27, 0.94));
+  border-bottom-left-radius: 6px;
 }
 
 .chat-message-content {
@@ -961,7 +964,15 @@ textarea::placeholder {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.75;
+  line-height: 1.55;
+}
+
+.chat-message-meta {
+  font-size: 0.7rem;
+  opacity: 0.68;
+  text-align: right;
+  margin-top: 0.35rem;
+  line-height: 1;
 }
 
 .chat-input-bar .form-control {

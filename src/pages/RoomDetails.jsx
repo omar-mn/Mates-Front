@@ -24,7 +24,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
   const wsRef = useRef(null);
   const messageListRef = useRef(null);
-  const messagesEndRef = useRef(null);
   const hasLoadedRoomRef = useRef(false);
   const shouldScrollOnNextRenderRef = useRef(false);
   const scrollBehaviorRef = useRef('auto');
@@ -59,6 +58,13 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
   const scheduleScrollToBottom = (behavior = 'auto') => {
     shouldScrollOnNextRenderRef.current = true;
     scrollBehaviorRef.current = behavior;
+  };
+
+  const scrollMessageListToBottom = (behavior = 'auto') => {
+    const node = messageListRef.current;
+    if (!node) return;
+
+    node.scrollTo({ top: node.scrollHeight, behavior });
   };
 
   const scheduleInitialScrollToBottom = () => {
@@ -104,7 +110,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
     const rafId = window.requestAnimationFrame(() => {
       const behavior = hasLoadedRoomRef.current ? scrollBehaviorRef.current : 'auto';
-      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+      scrollMessageListToBottom(behavior);
       shouldScrollOnNextRenderRef.current = false;
       hasLoadedRoomRef.current = true;
     });
@@ -311,7 +317,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
             })}
 
             {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
-            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
 
           <form className="chat-input-bar" onSubmit={handleSend}>

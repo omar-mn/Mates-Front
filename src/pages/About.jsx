@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sendFeedback } from '../api';
 import sticker from './st.webp';
 
 const featureCards = [
@@ -39,7 +41,31 @@ const featureCards = [
   },
 ];
 
-function About() {
+function About({ showToast }) {
+  const [content, setContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      showToast?.('Feedback content is required.', 'danger');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await sendFeedback({ content: trimmedContent });
+      setContent('');
+      showToast?.('Feedback sent successfully', 'success');
+    } catch (err) {
+      showToast?.(err.message || 'Failed to send feedback', 'danger');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-4 px-3 px-lg-4 detail-page-shell about-page">
       <section className="about-hero-card soft-enter-panel mb-4 mb-xl-5">
@@ -67,6 +93,39 @@ function About() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="soft-enter-panel mb-4 mb-xl-5" aria-labelledby="about-feedback-heading">
+        <div className="about-section-heading mb-3">
+          <div>
+            <div className="placeholder-page-label">Share Your Thoughts</div>
+            <h2 id="about-feedback-heading" className="mb-2">Send Feedback</h2>
+            <p className="text-secondary mb-0">
+              Found a bug, have an idea, or just want to share feedback? Send it here.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="about-feature-card">
+          <label htmlFor="about-feedback-content" className="form-label text-light fw-semibold mb-2">
+            Feedback
+          </label>
+          <textarea
+            id="about-feedback-content"
+            name="content"
+            className="form-control bg-dark text-light border-secondary"
+            placeholder="Write your feedback here..."
+            rows="5"
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            disabled={isSubmitting}
+          />
+          <div className="d-flex justify-content-end mt-3">
+            <button type="submit" className="btn btn-primary px-4" disabled={isSubmitting}>
+              {isSubmitting ? 'Sending...' : 'Send Feedback'}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="soft-enter-panel" aria-labelledby="about-features-heading">

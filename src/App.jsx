@@ -198,7 +198,7 @@ function App() {
             <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} showToast={showToast} /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>} />
-            <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><About /></ProtectedRoute>} />
+            <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><About showToast={showToast} /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
           </Routes>
         </div>

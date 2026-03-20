@@ -315,3 +315,14 @@ export async function deleteMessage(roomId, messageId) {
   if (!response.ok) throw new Error(await parseApiError(response, 'Failed to delete message'));
   return true;
 }
+
+export async function sendFeedback({ content }) {
+  return fetchJson('messages/sendfeedback/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ content }),
+  }, 'Failed to send feedback');
+}

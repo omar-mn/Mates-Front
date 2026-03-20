@@ -326,7 +326,7 @@ useEffect(() => {
                         )}
                       </div>
                       <div className="chat-message-content mt-1" dir="auto">{message?.content || ''}</div>
-                      <div className="small text-secondary mt-2">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                      <div className="chat-message-meta small text-secondary">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
                     </div>
 
                     {isCurrentUser && (

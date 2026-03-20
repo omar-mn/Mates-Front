@@ -156,26 +156,18 @@ useEffect(() => {
 
     if (!incoming) return;
 
-    const senderId = getUserId(incoming?.user);
-    const senderUsername = incoming?.user?.username || '';
-    const isOwnMessage =
-      (currentUserId && senderId && senderId === currentUserId) ||
-      (currentUsername && senderUsername === currentUsername);
-
-    const shouldAutoScroll = isOwnMessage || isNearBottom();
-
     setMessages((prev) => {
-      if (incoming?.id && prev.some((msg) => msg.id === incoming.id)) {
-        return prev;
-      }
-      return [...prev, incoming];
-    });
+  if (incoming?.id && prev.some((msg) => msg.id === incoming.id)) {
+    return prev;
+  }
+  return [...prev, incoming];
+});
 
-    if (shouldAutoScroll) {
-      setTimeout(() => {
-        scrollToBottomSmooth();
-      }, 30);
-    }
+window.requestAnimationFrame(() => {
+  window.requestAnimationFrame(() => {
+    scrollToBottomSmooth();
+  });
+});
   } catch (err) {
     window.console.error('[RoomDetails] failed to parse websocket payload:', err);
   }

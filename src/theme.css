@@ -726,6 +726,7 @@ textarea::placeholder {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
   background: #0f0f17;
 }
 
@@ -773,15 +774,14 @@ textarea::placeholder {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 1rem 1.25rem 128px;
+  padding: 1rem 1.25rem;
   display: grid;
   align-content: start;
   gap: 0.9rem;
 }
 
 .chat-input-bar {
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
   border-top: 1px solid var(--border);
   background: #151521;
   padding: 0.9rem 1.25rem 1rem;
@@ -820,7 +820,7 @@ textarea::placeholder {
   }
 
   .chat-body {
-    padding: 0.85rem 0.65rem 120px;
+    padding: 0.85rem 0.65rem;
   }
 
   .chat-input-bar {

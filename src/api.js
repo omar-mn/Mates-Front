@@ -1,7 +1,8 @@
-const BACKEND_ORIGIN = 'https://unisotropous-lauren-persuadably.ngrok-free.dev';
+const BACKEND_ORIGIN = 'http://127.0.0.1:8000';
 const DEFAULT_API_BASE = `${BACKEND_ORIGIN}/api/`;
-const DEFAULT_WS_BASE = 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
+const DEFAULT_WS_BASE = 'ws://127.0.0.1:8000/ws/';
 const FALLBACK_AVATAR = 'https://ui-avatars.com/api/?name=User&background=6f33df&color=fff';
+const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1522199755839-a2bacb67c546?auto=format&fit=crop&w=1200&q=80';
 
 const normalizeBase = (baseUrl, fallback) => {
   const value = baseUrl || fallback;
@@ -50,15 +51,19 @@ export function getAuthHeaders() {
   const token = localStorage.getItem('accessToken') || '';
   return {
     Authorization: `Bearer ${token}`,
-    'ngrok-skip-browser-warning': 'true',
   };
 }
 
 export function resolveMediaUrl(url, fallback = FALLBACK_AVATAR) {
   if (!url) return fallback;
-  if (url.startsWith('http')) return url;
+  if (/^https?:\/\//i.test(url)) return url;
   if (url.startsWith('/')) return `${BACKEND_BASE_URL}${url}`;
   return fallback;
+}
+
+export function getDefaultBanner(name = 'Mates') {
+  const safeName = encodeURIComponent(name || 'Mates');
+  return `${FALLBACK_BANNER}&sig=${safeName}`;
 }
 
 export function getRoomSocketUrl(roomId) {
@@ -67,8 +72,24 @@ export function getRoomSocketUrl(roomId) {
   return `${WS_BASE_URL}message/${encodeURIComponent(roomId)}/?token=${encodedToken}`;
 }
 
+async function fetchJson(path, options = {}, fallbackMessage = 'Request failed') {
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  if (!response.ok) throw new Error(await parseApiError(response, fallbackMessage));
+  return response.json().catch(() => ({}));
+}
+
+async function fetchList(path, fallbackMessage) {
+  const data = await fetchJson(path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+  }, fallbackMessage);
+  return Array.isArray(data) ? data : data.results || [];
+}
+
 export async function registerUser({ username, email, password, confirmPassword }) {
-  const response = await fetch(`${API_BASE_URL}auth/registration/`, {
+  return fetchJson('auth/registration/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -77,22 +98,16 @@ export async function registerUser({ username, email, password, confirmPassword 
       password1: password,
       password2: confirmPassword,
     }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Register failed'));
-  return response.json().catch(() => ({}));
+  }, 'Register failed');
 }
 
 export async function loginUser(email, password) {
-  const response = await fetch(`${API_BASE_URL}auth/login/`, {
+  const data = await fetchJson('auth/login/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
-  });
+  }, 'Login failed');
 
-  if (!response.ok) throw new Error(await parseApiError(response, 'Login failed'));
-
-  const data = await response.json().catch(() => ({}));
   const accessToken = data.key || data.token || data.access || data.access_token || '';
   const refreshToken = data.refresh || data.refresh_token || '';
 
@@ -105,44 +120,44 @@ export async function loginUser(email, password) {
 }
 
 export async function resetPassword(email) {
-  const response = await fetch(`${API_BASE_URL}auth/password/reset/`, {
+  return fetchJson('auth/password/reset/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to send reset password request'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to send reset password request');
 }
 
 export async function getCurrentUser() {
-  const response = await fetch(`${API_BASE_URL}auth/user/`, {
+  return fetchJson('auth/user/', {
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
-  });
+  }, 'Failed to load user profile');
+}
 
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load user profile'));
-  return response.json().catch(() => ({}));
+export async function getPublicProfile(userId) {
+  return fetchJson(`auth/profile/${userId}/`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+  }, 'Failed to load public profile');
 }
 
 export async function updateCurrentUser(payload) {
-  const response = await fetch(`${API_BASE_URL}auth/user/`, {
+  return fetchJson('auth/user/', {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to update profile'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to update profile');
 }
 
 export async function changePassword({ newPassword1, newPassword2 }) {
-  const response = await fetch(`${API_BASE_URL}auth/password/change/`, {
+  return fetchJson('auth/password/change/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -152,28 +167,35 @@ export async function changePassword({ newPassword1, newPassword2 }) {
       new_password1: newPassword1,
       new_password2: newPassword2,
     }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to change password'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to change password');
 }
 
 export async function getRooms() {
-  const response = await fetch(`${API_BASE_URL}rooms/`, {
+  return fetchList('rooms/', 'Failed to load rooms');
+}
+
+export async function getJoinedRooms() {
+  return fetchList('rooms/joinedrooms/', 'Failed to load joined rooms');
+}
+
+export async function getMyPendingRequests() {
+  return fetchList('rooms/pendingrequsts/', 'Failed to load your join requests');
+}
+
+export async function cancelJoinRequest(requestId) {
+  const response = await fetch(`${API_BASE_URL}rooms/cancelrequest/${requestId}/`, {
+    method: 'DELETE',
     headers: {
-      'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
   });
 
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load rooms'));
-
-  const data = await response.json().catch(() => []);
-  return Array.isArray(data) ? data : data.results || [];
+  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to cancel request'));
+  return true;
 }
 
 export async function createRoom(roomData) {
-  const response = await fetch(`${API_BASE_URL}rooms/create/`, {
+  return fetchJson('rooms/create/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -183,102 +205,66 @@ export async function createRoom(roomData) {
       ...roomData,
       private: Boolean(roomData.private),
     }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to create room'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to create room');
 }
 
 export async function getRoomDetails(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/room/${roomId}/`, {
+  return fetchJson(`rooms/room/${roomId}/`, {
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load room details'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to load room details');
 }
 
 export async function joinRoom(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/join/${roomId}/`, {
+  return fetchJson(`rooms/join/${roomId}/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to join room'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to join room');
 }
 
 export async function leaveRoom(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/leave/${roomId}/`, {
+  return fetchJson(`rooms/leave/${roomId}/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to leave room'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to leave room');
 }
 
 export async function getPendingRequests(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/pendingrequsts/${roomId}/`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load pending requests'));
-  const data = await response.json().catch(() => []);
-  return Array.isArray(data) ? data : data.results || [];
+  return fetchList(`rooms/pendingrequsts/${roomId}/`, 'Failed to load pending requests');
 }
 
 export async function getOldRequests(roomId) {
-  const response = await fetch(`${API_BASE_URL}rooms/oldrequsts/${roomId}/`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load old requests'));
-  const data = await response.json().catch(() => []);
-  return Array.isArray(data) ? data : data.results || [];
+  return fetchList(`rooms/oldrequsts/${roomId}/`, 'Failed to load old requests');
 }
 
 export async function handleRoomRequest(roomId, requestId, state) {
-  const response = await fetch(`${API_BASE_URL}rooms/reqhandel/${roomId}/${requestId}/`, {
+  return fetchJson(`rooms/reqhandel/${roomId}/${requestId}/`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
     body: JSON.stringify({ state }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, `Failed to mark request as ${state}`));
-  return response.json().catch(() => ({}));
+  }, `Failed to mark request as ${state}`);
 }
 
 export async function updateRoom(roomId, payload) {
-  const response = await fetch(`${API_BASE_URL}rooms/modify/${roomId}/`, {
+  return fetchJson(`rooms/modify/${roomId}/`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to update room'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to update room');
 }
 
 export async function deleteRoom(roomId) {
@@ -307,17 +293,14 @@ export async function getRoomMessages(roomId) {
 }
 
 export async function updateMessage(roomId, messageId, content) {
-  const response = await fetch(`${API_BASE_URL}messages/mod/${roomId}/${messageId}/`, {
+  return fetchJson(`messages/mod/${roomId}/${messageId}/`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
     },
     body: JSON.stringify({ content }),
-  });
-
-  if (!response.ok) throw new Error(await parseApiError(response, 'Failed to edit message'));
-  return response.json().catch(() => ({}));
+  }, 'Failed to edit message');
 }
 
 export async function deleteMessage(roomId, messageId) {

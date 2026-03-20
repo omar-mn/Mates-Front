@@ -7,7 +7,9 @@ const getFallbackAvatar = (name) => {
   return `https://ui-avatars.com/api/?name=${safeName}&background=random&color=fff`;
 };
 
-function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
+const getUserId = (user) => user?.id || user?.user_id || null;
+
+function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicProfile }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
@@ -25,6 +27,16 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   const currentUsername = currentUser?.username || '';
   const roomOwner = room?.owner?.username || '';
   const canAccessRoom = Boolean(room?.is_member ?? room?.members?.some((member) => member?.user?.username === currentUsername && !member?.leftDate));
+
+  const handleOpenProfile = (user) => {
+    const userId = getUserId(user);
+    if (!userId) {
+      showToast?.('Profile details unavailable', 'info');
+      return;
+    }
+
+    onOpenPublicProfile?.(userId, user?.username);
+  };
 
   const loadRoom = async () => {
     setLoading(true);
@@ -170,6 +182,8 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
     [messages],
   );
 
+  const roomInitial = (room?.name || 'R').charAt(0).toUpperCase();
+
   if (loading) {
     return <div className="container-fluid py-4 px-3 px-lg-4"><div className="text-center py-5"><div className="spinner-border" /></div></div>;
   }
@@ -177,96 +191,102 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser }) {
   const lockedMessage = room?.private ? 'You need to send a join request first.' : 'You need to join this room first.';
 
   return (
-    <div className="container-fluid room-chat-page py-3 py-lg-4 px-2 px-sm-3 px-lg-4">
-      {error && <div className="alert alert-danger">{error}</div>}
+    <div className="room-page-layout">
+      {error && <div className="alert alert-danger m-3">{error}</div>}
 
       {!canAccessRoom ? (
-        <div className="room-locked-state card border-0 shadow-sm rounded-4 p-4 p-lg-5 text-center mx-auto">
-          <div className="display-5 mb-3"><i className={`bi ${room?.private ? 'bi-lock-fill' : 'bi-door-open-fill'}`} /></div>
-          <h2 className="mb-3">Access required</h2>
-          <p className="text-secondary mb-4">{lockedMessage}</p>
-          <div className="d-flex justify-content-center gap-2 flex-wrap">
-            <button className="btn btn-outline-secondary" onClick={() => navigate('/home')}>Back to rooms</button>
-            <button className="btn btn-primary" onClick={() => navigate(`/room/${id}/info`)}>Open Room Info</button>
+        <div className="container-fluid py-4 px-3 px-lg-4">
+          <div className="room-locked-state card border-0 shadow-sm rounded-4 p-4 p-lg-5 text-center mx-auto">
+            <div className="display-5 mb-3"><i className={`bi ${room?.private ? 'bi-lock-fill' : 'bi-door-open-fill'}`} /></div>
+            <h2 className="mb-3">Access required</h2>
+            <p className="text-secondary mb-4">{lockedMessage}</p>
+            <div className="d-flex justify-content-center gap-2 flex-wrap">
+              <button className="btn btn-outline-secondary" onClick={() => navigate('/home')}>Back to rooms</button>
+              <button className="btn btn-primary" onClick={() => navigate(`/room/${id}/info`)}>Open Room Info</button>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="room-chat-shell mx-auto">
-          <button className="room-chat-header card border-0 shadow-sm rounded-4 mb-3 w-100 text-start" onClick={() => navigate(`/room/${id}/info`)}>
-            <div className="card-body py-3 d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <div className="small text-secondary text-uppercase">Room</div>
-                <h3 className="mb-0 room-chat-title">{room?.name || 'Room'}</h3>
-              </div>
-              <i className="bi bi-chevron-right text-secondary" />
+        <div className="chat-shell">
+          <button className="chat-header-bar" onClick={() => navigate(`/room/${id}/info`)}>
+            <div className="chat-room-avatar" aria-hidden="true">{roomInitial}</div>
+            <div className="d-flex flex-column text-start">
+              <span className="chat-header-label">Room</span>
+              <span className="chat-header-name">{room?.name || 'Room'}</span>
             </div>
+            <i className="bi bi-chevron-right text-secondary ms-auto" />
           </button>
 
-          <div className="card border-0 shadow-sm rounded-4 room-messages-card" ref={messageListRef}>
-            <div className="card-body room-messages-body d-grid gap-3">
-              {sortedMessages.map((message, index) => {
-                const messageUsername = message?.user?.username || '';
-                const isCurrentUser = currentUsername && messageUsername === currentUsername;
-                const canEdit = isCurrentUser;
-                const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
+          <div className="chat-body" ref={messageListRef}>
+            {sortedMessages.map((message, index) => {
+              const messageUser = message?.user || {};
+              const messageUsername = messageUser?.username || '';
+              const isCurrentUser = currentUsername && messageUsername === currentUsername;
+              const canEdit = isCurrentUser;
+              const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
 
-                return (
-                  <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex chat-message-row ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
-                    <div className="d-flex gap-2 chat-message-wrap">
-                      {!isCurrentUser && (
+              return (
+                <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex chat-message-row ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                  <div className="d-flex gap-2 chat-message-wrap">
+                    {!isCurrentUser && (
+                      <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
                         <img
-                          src={resolveMediaUrl(message?.user?.profileImage, getFallbackAvatar(message?.user?.username))}
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(message?.user?.username); }}
+                          src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
                           alt="user"
                           width="34"
                           height="34"
-                          className="rounded-circle border align-self-end"
+                          className="rounded-circle border"
                         />
-                      )}
+                      </button>
+                    )}
 
-                      <div className={`card border-0 p-2 px-3 chat-message-bubble ${isCurrentUser ? 'chat-own-message' : ''}`}>
-                        <div className="d-flex align-items-start justify-content-between gap-2">
-                          <div className="small text-secondary fw-semibold">{messageUsername || 'User'}</div>
-                          {(canEdit || canDelete) && (
-                            <div className="dropdown">
-                              <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
-                              <ul className="dropdown-menu dropdown-menu-end">
-                                {canEdit && <li><button className="dropdown-item" onClick={() => {
-                                  setEditingMessage({ id: message.id, content: message.content || '' });
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
-                                }}>Edit message</button></li>}
-                                {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
-                                  setDeletingMessage(message);
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
-                                }}>Delete message</button></li>}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-1" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message?.content || ''}</div>
-                        <div className="small text-secondary mt-2">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    <div className={`card border-0 p-2 px-3 chat-message-bubble ${isCurrentUser ? 'chat-own-message' : ''}`}>
+                      <div className="d-flex align-items-start justify-content-between gap-2">
+                        <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
+                          {messageUsername || 'User'}
+                        </button>
+                        {(canEdit || canDelete) && (
+                          <div className="dropdown">
+                            <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
+                            <ul className="dropdown-menu dropdown-menu-end">
+                              {canEdit && <li><button className="dropdown-item" onClick={() => {
+                                setEditingMessage({ id: message.id, content: message.content || '' });
+                                window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
+                              }}>Edit message</button></li>}
+                              {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
+                                setDeletingMessage(message);
+                                window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
+                              }}>Delete message</button></li>}
+                            </ul>
+                          </div>
+                        )}
                       </div>
+                      <div className="mt-1" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message?.content || ''}</div>
+                      <div className="small text-secondary mt-2">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                    </div>
 
-                      {isCurrentUser && (
+                    {isCurrentUser && (
+                      <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
                         <img
-                          src={resolveMediaUrl(message?.user?.profileImage, getFallbackAvatar(message?.user?.username))}
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(message?.user?.username); }}
+                          src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
                           alt="user"
                           width="34"
                           height="34"
-                          className="rounded-circle border align-self-end"
+                          className="rounded-circle border"
                         />
-                      )}
-                    </div>
+                      </button>
+                    )}
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
 
-              {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
-            </div>
+            {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
           </div>
 
-          <form className="card border-0 shadow-sm rounded-4 p-3 mt-3 room-input-card" onSubmit={handleSend}>
+          <form className="chat-input-bar" onSubmit={handleSend}>
             <div className="d-flex justify-content-between align-items-center mb-2">
               <small className="text-secondary">Chat status: {socketState}</small>
             </div>

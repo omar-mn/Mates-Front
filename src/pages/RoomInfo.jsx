@@ -11,7 +11,7 @@ const getRequestUser = (request) => request?.user || request?.requested_by || re
 const getRequestState = (request) => request?.state || request?.status || 'pending';
 const getRequestId = (request) => request?.id || request?.request_id || request?.pk;
 
-function RoomInfo({ currentUser, onApiStatusChange, showToast }) {
+function RoomInfo({ currentUser, onApiStatusChange, showToast, onOpenPublicProfile }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
@@ -114,16 +114,28 @@ function RoomInfo({ currentUser, onApiStatusChange, showToast }) {
           <div className="info-card info-section h-100">
             <div className="info-label mb-2">Owner</div>
             <div className="d-flex align-items-center gap-3">
-              <img
-                src={resolveMediaUrl(room?.owner?.profileImage, getFallbackAvatar(room?.owner?.username))}
-                alt={room?.owner?.username || 'owner'}
-                width="64"
-                height="64"
-                className="rounded-circle border"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(room?.owner?.username); }}
-              />
+              <button
+                className="btn p-0 border-0 bg-transparent public-profile-trigger"
+                onClick={() => onOpenPublicProfile?.(room?.owner?.id, room?.owner?.username)}
+                type="button"
+              >
+                <img
+                  src={resolveMediaUrl(room?.owner?.profileImage, getFallbackAvatar(room?.owner?.username))}
+                  alt={room?.owner?.username || 'owner'}
+                  width="64"
+                  height="64"
+                  className="rounded-circle border"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(room?.owner?.username); }}
+                />
+              </button>
               <div>
-                <div className="info-value fw-semibold">{room?.owner?.username || 'Unknown owner'}</div>
+                <button
+                  type="button"
+                  className="btn p-0 border-0 bg-transparent info-value fw-semibold public-profile-trigger"
+                  onClick={() => onOpenPublicProfile?.(room?.owner?.id, room?.owner?.username)}
+                >
+                  {room?.owner?.username || 'Unknown owner'}
+                </button>
                 <div className="text-secondary">Room owner</div>
               </div>
             </div>
@@ -147,16 +159,28 @@ function RoomInfo({ currentUser, onApiStatusChange, showToast }) {
               {(room?.members || []).filter((member) => !member?.leftDate).map((member, index) => (
                 <div className="col-12 col-md-6 col-xl-4" key={`${member?.user?.username || index}-${member?.role || index}`}>
                   <div className="member-card h-100">
-                    <img
-                      src={resolveMediaUrl(member?.user?.profileImage, getFallbackAvatar(member?.user?.username))}
-                      alt={member?.user?.username || 'member'}
-                      width="52"
-                      height="52"
-                      className="rounded-circle border"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(member?.user?.username); }}
-                    />
+                    <button
+                      type="button"
+                      className="btn p-0 border-0 bg-transparent public-profile-trigger"
+                      onClick={() => onOpenPublicProfile?.(member?.user?.id, member?.user?.username)}
+                    >
+                      <img
+                        src={resolveMediaUrl(member?.user?.profileImage, getFallbackAvatar(member?.user?.username))}
+                        alt={member?.user?.username || 'member'}
+                        width="52"
+                        height="52"
+                        className="rounded-circle border"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(member?.user?.username); }}
+                      />
+                    </button>
                     <div>
-                      <div className="fw-semibold">{member?.user?.username || 'Unknown user'}</div>
+                      <button
+                        type="button"
+                        className="btn p-0 border-0 bg-transparent fw-semibold public-profile-trigger"
+                        onClick={() => onOpenPublicProfile?.(member?.user?.id, member?.user?.username)}
+                      >
+                        {member?.user?.username || 'Unknown user'}
+                      </button>
                       <span className="request-state-badge state-neutral text-capitalize">{member?.role || 'member'}</span>
                     </div>
                   </div>

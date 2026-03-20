@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { getCurrentUser } from './api';
+import { getCurrentUser, getJoinedRooms } from './api';
 import AppNavbar from './components/AppNavbar';
+import PublicProfileModal from './components/PublicProfileModal';
 import AppSidebar from './components/AppSidebar';
 import ToastHost from './components/ToastHost';
 import ForgotPassword from './pages/ForgotPassword';
@@ -29,6 +30,9 @@ function App() {
   const [createRoomRequest, setCreateRoomRequest] = useState(0);
   const [refreshRoomsRequest, setRefreshRoomsRequest] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const [joinedRooms, setJoinedRooms] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(localStorage.getItem('sidebarCollapsed') === 'true');
+  const [profileRequest, setProfileRequest] = useState(null);
   const toastTimerRef = useRef(null);
 
   const isLoggedIn = Boolean(token);
@@ -46,9 +50,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
     const loadProfile = async () => {
       if (!token) {
         setProfile(null);
+        setJoinedRooms([]);
         return;
       }
 
@@ -67,6 +76,22 @@ function App() {
     loadProfile();
   }, [token]);
 
+  useEffect(() => {
+    const loadJoinedRooms = async () => {
+      if (!token) return;
+
+      try {
+        const data = await getJoinedRooms();
+        setJoinedRooms(data || []);
+      } catch (err) {
+        setJoinedRooms([]);
+        showToast(err.message || 'Failed to load joined rooms', 'danger');
+      }
+    };
+
+    loadJoinedRooms();
+  }, [token]);
+
   const handleLoginSuccess = () => {
     setToken(localStorage.getItem('accessToken') || '');
     navigate('/home');
@@ -74,10 +99,21 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     setToken('');
     setProfile(null);
+    setJoinedRooms([]);
     showToast('You have been logged out.', 'info');
     navigate('/login');
+  };
+
+  const openPublicProfile = (userId, username) => {
+    if (!userId) {
+      showToast('Profile details unavailable', 'info');
+      return;
+    }
+
+    setProfileRequest({ userId, username });
   };
 
   return (
@@ -87,6 +123,9 @@ function App() {
       {isLoggedIn && (
         <AppSidebar
           apiStatus={apiStatus}
+          joinedRooms={joinedRooms}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
           onCreateRoom={() => {
             navigate('/home');
             setCreateRoomRequest((prev) => prev + 1);
@@ -104,7 +143,7 @@ function App() {
         />
       )}
 
-      <main className={isLoggedIn ? 'app-main with-sidebar' : 'app-main'}>
+      <main className={isLoggedIn ? `app-main with-sidebar ${sidebarCollapsed ? 'with-sidebar-collapsed' : 'with-sidebar-expanded'}` : 'app-main'}>
         <Routes>
           <Route path="/" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
           <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} showToast={showToast} />} />
@@ -133,6 +172,7 @@ function App() {
                   currentUser={profile}
                   onApiStatusChange={setApiStatus}
                   showToast={showToast}
+                  onOpenPublicProfile={openPublicProfile}
                 />
               </ProtectedRoute>
             )}
@@ -145,11 +185,12 @@ function App() {
                   currentUser={profile}
                   onApiStatusChange={setApiStatus}
                   showToast={showToast}
+                  onOpenPublicProfile={openPublicProfile}
                 />
               </ProtectedRoute>
             )}
           />
-          <Route path="/profile" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Profile currentUser={profile} setCurrentUser={setProfile} showToast={showToast} /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Profile currentUser={profile} setCurrentUser={setProfile} showToast={showToast} onJoinedRoomsChange={setJoinedRooms} /></ProtectedRoute>} />
           <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} showToast={showToast} /></ProtectedRoute>} />
           <Route path="/help" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>} />
@@ -157,6 +198,7 @@ function App() {
           <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
         </Routes>
       </main>
+      <PublicProfileModal profileRequest={profileRequest} onClose={() => setProfileRequest(null)} showToast={showToast} />
       <ToastHost toast={toast} />
     </>
   );

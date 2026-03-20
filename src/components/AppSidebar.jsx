@@ -6,6 +6,7 @@ const navigationItems = [
   { to: '/home', icon: 'bi-house', label: 'Home' },
   { to: '/profile', icon: 'bi-person', label: 'Profile' },
   { to: '/updates', icon: 'bi-megaphone', label: 'Updates' },
+  { to: '/about', icon: 'bi-info-circle', label: 'About' },
   { to: '/settings', icon: 'bi-gear', label: 'Settings' },
 ];
 
@@ -33,16 +34,32 @@ function JoinedRoomsList({ joinedRooms, collapsed }) {
   return (
     <div className="sidebar-section">
       <h6 className="sidebar-heading">Joined Rooms</h6>
-      <div className="d-flex flex-column gap-1">
-        {joinedRooms.length ? joinedRooms.map((item) => (
-          <NavLink
-            key={item.room?.id || item.id}
-            to={`/room/${item.room?.id}`}
-            className={({ isActive }) => `sidebar-link sidebar-room-link ${isActive ? 'active' : ''}`}
-          >
-            <span className="text-truncate">{item.room?.name || 'Room'}</span>
-          </NavLink>
-        )) : <div className="small text-secondary px-2">No joined rooms yet.</div>}
+      <div className="joined-rooms-panel">
+        {joinedRooms.length ? joinedRooms.map((item, index) => {
+          const room = item.room || item;
+          const membersCount = room?.membersCount ?? 0;
+          const privacyLabel = room?.private ? 'Private' : 'Public';
+          return (
+            <NavLink
+              key={room?.id || item.id || index}
+              to={`/room/${room?.id}`}
+              className={({ isActive }) => `joined-room-item ${isActive ? 'active' : ''}`}
+            >
+              <div className="joined-room-main">
+                <span className="joined-room-name text-truncate">{room?.name || 'Room'}</span>
+                <span className={`joined-room-privacy-badge ${room?.private ? 'is-private' : 'is-public'}`}>
+                  <i className={`bi ${room?.private ? 'bi-lock-fill' : 'bi-globe2'}`} />
+                  {privacyLabel}
+                </span>
+              </div>
+              <div className="joined-room-meta">
+                <span>{membersCount} member{membersCount === 1 ? '' : 's'}</span>
+                <span aria-hidden="true">•</span>
+                <span>{privacyLabel}</span>
+              </div>
+            </NavLink>
+          );
+        }) : <div className="small text-secondary px-2 py-2">No joined rooms yet.</div>}
       </div>
     </div>
   );

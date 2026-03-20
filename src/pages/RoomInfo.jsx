@@ -81,11 +81,11 @@ function RoomInfo({ currentUser, onApiStatusChange, showToast, onOpenPublicProfi
   };
 
   if (loading) {
-    return <div className="container-fluid py-4 px-3 px-lg-4"><div className="text-center py-5"><div className="spinner-border" /></div></div>;
+    return <div className="container-fluid py-4 px-3 px-lg-4 detail-page-shell"><div className="text-center py-5"><div className="spinner-border" /></div></div>;
   }
 
   return (
-    <div className="container-fluid py-4 px-3 px-lg-4">
+    <div className="container-fluid py-4 px-3 px-lg-4 detail-page-shell">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <div>
           <h2 className="mb-1">Room Info</h2>
@@ -96,7 +96,7 @@ function RoomInfo({ currentUser, onApiStatusChange, showToast, onOpenPublicProfi
 
       <div className="row g-3">
         <div className="col-12 col-xl-7">
-          <div className="info-card info-section h-100">
+          <div className="info-card info-section h-100 soft-enter-panel">
             <div className="info-label mb-2">Summary</div>
             <h3 className="mb-3">{room?.name || 'Room'}</h3>
             <div className="d-flex flex-wrap gap-2 mb-3">

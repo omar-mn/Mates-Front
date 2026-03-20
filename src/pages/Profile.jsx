@@ -125,7 +125,7 @@ function Profile({ currentUser, setCurrentUser, showToast, onJoinedRoomsChange }
     <div className="container-fluid py-4 px-3 px-lg-4 profile-page-shell">
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 soft-enter-panel">
         <img
           src={resolveMediaUrl(profile?.profile_banner, getDefaultBanner(profile?.username))}
           onError={(e) => { e.currentTarget.src = getDefaultBanner(profile?.username); }}

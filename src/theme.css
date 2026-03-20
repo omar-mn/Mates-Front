@@ -1086,3 +1086,224 @@ textarea::placeholder {
     scroll-behavior: auto !important;
   }
 }
+
+.updates-page,
+.about-page {
+  max-width: 1280px;
+}
+
+.updates-hero-card,
+.updates-phase-card,
+.about-hero-card,
+.about-feature-card,
+.about-story-panel,
+.about-sticker-frame,
+.updates-roadmap-group {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(18, 17, 28, 0.98), rgba(12, 12, 18, 0.96));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+}
+
+.updates-hero-card,
+.updates-phase-card,
+.about-hero-card {
+  padding: 1.5rem;
+}
+
+.updates-hero-card::after,
+.about-hero-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -65% auto;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18), rgba(139, 92, 246, 0));
+  pointer-events: none;
+}
+
+.updates-hero-copy {
+  max-width: 760px;
+  line-height: 1.75;
+}
+
+.updates-phase-kicker,
+.updates-roadmap-heading {
+  color: #be9cff;
+  letter-spacing: 0.08em;
+}
+
+.updates-phase-kicker {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.updates-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+}
+
+.updates-status-badge.is-completed {
+  color: #d6f5df;
+  background: rgba(41, 145, 72, 0.18);
+  border-color: rgba(92, 203, 127, 0.28);
+}
+
+.updates-status-badge.is-next {
+  color: #f1e3ff;
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(173, 123, 255, 0.34);
+}
+
+.updates-status-badge.is-planned {
+  color: #d5d2e8;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.updates-checklist li,
+.updates-roadmap-list li {
+  color: #d7d2e5;
+}
+
+.updates-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.updates-checklist li i {
+  color: #b784ff;
+  margin-top: 0.15rem;
+}
+
+.updates-roadmap-group {
+  padding: 1.1rem 1.1rem 1rem;
+  height: 100%;
+}
+
+.updates-roadmap-heading {
+  font-size: 0.78rem;
+  margin-bottom: 0.9rem;
+}
+
+.updates-roadmap-list {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.updates-roadmap-list li + li {
+  margin-top: 0.65rem;
+}
+
+.about-hero-card {
+  border-color: rgba(176, 109, 255, 0.18);
+}
+
+.about-story-panel {
+  padding: 1.5rem;
+  border-color: rgba(176, 109, 255, 0.28);
+  box-shadow: 0 0 0 1px rgba(176, 109, 255, 0.1), 0 24px 48px rgba(31, 11, 53, 0.42);
+}
+
+.about-story-label {
+  margin-bottom: 1rem;
+}
+
+.about-story-copy {
+  color: #f7f2ff;
+  line-height: 2;
+  white-space: pre-wrap;
+  font-size: 1rem;
+}
+
+.about-story-link {
+  color: #d6b2ff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.about-story-link:hover {
+  color: #eddcff;
+  text-decoration: underline;
+}
+
+.about-sticker-slot {
+  height: 100%;
+}
+
+.about-sticker-chip {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  color: #d9c5ff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.about-sticker-frame {
+  min-height: 100%;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border-style: dashed;
+  border-color: rgba(176, 109, 255, 0.24);
+}
+
+.about-sticker-icon {
+  font-size: 2.5rem;
+  color: #be9cff;
+  margin-bottom: 1rem;
+}
+
+.about-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.about-feature-card {
+  padding: 1.25rem;
+}
+
+.about-feature-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.95rem;
+  margin-bottom: 1rem;
+  color: #e9d7ff;
+  background: linear-gradient(145deg, rgba(103, 56, 171, 0.6), rgba(53, 26, 95, 0.9));
+  border: 1px solid rgba(176, 109, 255, 0.2);
+}
+
+.about-feature-icon i {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 991.98px) {
+  .about-story-copy {
+    line-height: 1.9;
+  }
+}

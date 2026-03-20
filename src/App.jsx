@@ -9,6 +9,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import PlaceholderPage from './pages/PlaceholderPage';
+import About from './pages/About';
 import Profile from './pages/Profile';
 import Register from './pages/Register';
 import RoomDetails from './pages/RoomDetails';
@@ -197,7 +198,7 @@ function App() {
             <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} showToast={showToast} /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>} />
-            <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="About Mates" description="A lightweight placeholder while we prepare the full story, roadmap, and product details for Mates." /></ProtectedRoute>} />
+            <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><About /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
           </Routes>
         </div>

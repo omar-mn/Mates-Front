@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, getJoinedRooms } from './api';
 import AppNavbar from './components/AppNavbar';
 import PublicProfileModal from './components/PublicProfileModal';
@@ -23,6 +23,7 @@ function ProtectedRoute({ isLoggedIn, children }) {
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [token, setToken] = useState(localStorage.getItem('accessToken') || '');
   const [profile, setProfile] = useState(null);
   const [apiStatus, setApiStatus] = useState('connected');
@@ -144,59 +145,61 @@ function App() {
       )}
 
       <main className={isLoggedIn ? `app-main with-sidebar ${sidebarCollapsed ? 'with-sidebar-collapsed' : 'with-sidebar-expanded'}` : 'app-main'}>
-        <Routes>
-          <Route path="/" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
-          <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} showToast={showToast} />} />
-          <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <Register showToast={showToast} />} />
-          <Route path="/forgot-password" element={isLoggedIn ? <Navigate to="/home" replace /> : <ForgotPassword showToast={showToast} />} />
-          <Route
-            path="/home"
-            element={(
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <Home
-                  currentUser={profile}
-                  selectedCategory={selectedCategory}
-                  createRoomRequest={createRoomRequest}
-                  refreshRoomsRequest={refreshRoomsRequest}
-                  onApiStatusChange={setApiStatus}
-                  showToast={showToast}
-                />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/room/:id"
-            element={(
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <RoomDetails
-                  currentUser={profile}
-                  onApiStatusChange={setApiStatus}
-                  showToast={showToast}
-                  onOpenPublicProfile={openPublicProfile}
-                />
-              </ProtectedRoute>
-            )}
-          />
-          <Route
-            path="/room/:id/info"
-            element={(
-              <ProtectedRoute isLoggedIn={isLoggedIn}>
-                <RoomInfo
-                  currentUser={profile}
-                  onApiStatusChange={setApiStatus}
-                  showToast={showToast}
-                  onOpenPublicProfile={openPublicProfile}
-                />
-              </ProtectedRoute>
-            )}
-          />
-          <Route path="/profile" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Profile currentUser={profile} setCurrentUser={setProfile} showToast={showToast} onJoinedRoomsChange={setJoinedRooms} /></ProtectedRoute>} />
-          <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} showToast={showToast} /></ProtectedRoute>} />
-          <Route path="/help" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>} />
-          <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="About" description="About this app page is coming soon." /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
-        </Routes>
+        <div key={location.pathname} className="page-transition">
+          <Routes>
+            <Route path="/" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
+            <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <Login onLoginSuccess={handleLoginSuccess} showToast={showToast} />} />
+            <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <Register showToast={showToast} />} />
+            <Route path="/forgot-password" element={isLoggedIn ? <Navigate to="/home" replace /> : <ForgotPassword showToast={showToast} />} />
+            <Route
+              path="/home"
+              element={(
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <Home
+                    currentUser={profile}
+                    selectedCategory={selectedCategory}
+                    createRoomRequest={createRoomRequest}
+                    refreshRoomsRequest={refreshRoomsRequest}
+                    onApiStatusChange={setApiStatus}
+                    showToast={showToast}
+                  />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/room/:id"
+              element={(
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <RoomDetails
+                    currentUser={profile}
+                    onApiStatusChange={setApiStatus}
+                    showToast={showToast}
+                    onOpenPublicProfile={openPublicProfile}
+                  />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/room/:id/info"
+              element={(
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <RoomInfo
+                    currentUser={profile}
+                    onApiStatusChange={setApiStatus}
+                    showToast={showToast}
+                    onOpenPublicProfile={openPublicProfile}
+                  />
+                </ProtectedRoute>
+              )}
+            />
+            <Route path="/profile" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Profile currentUser={profile} setCurrentUser={setProfile} showToast={showToast} onJoinedRoomsChange={setJoinedRooms} /></ProtectedRoute>} />
+            <Route path="/updates" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Updates /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Settings onLogout={handleLogout} showToast={showToast} /></ProtectedRoute>} />
+            <Route path="/help" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="Help" description="Help and FAQ content is coming soon." /></ProtectedRoute>} />
+            <Route path="/about" element={<ProtectedRoute isLoggedIn={isLoggedIn}><PlaceholderPage title="About Mates" description="A lightweight placeholder while we prepare the full story, roadmap, and product details for Mates." /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to={isLoggedIn ? '/home' : '/login'} replace />} />
+          </Routes>
+        </div>
       </main>
       <PublicProfileModal profileRequest={profileRequest} onClose={() => setProfileRequest(null)} showToast={showToast} />
       <ToastHost toast={toast} />

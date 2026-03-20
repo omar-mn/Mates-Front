@@ -214,7 +214,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
         <div className="text-center py-5"><div className="spinner-border" /></div>
       ) : (
         <div className="row g-3">
-          {filteredRooms.map((room) => {
+          {filteredRooms.map((room, index) => {
             const isOwner = currentUsername && room.owner?.username === currentUsername;
             const activeMembers = getActiveMembers(room.members);
             const previewMembers = activeMembers.slice(-5);
@@ -222,7 +222,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
             const membersCount = room.membersCount ?? activeMembers.length;
 
             return (
-              <div key={room.id} className="col-12 col-lg-6">
+              <div key={room.id} className="col-12 col-lg-6 room-card-appear" style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
                 <div
                   className="card room-card h-100 border-0 shadow-sm rounded-4"
                   role="button"

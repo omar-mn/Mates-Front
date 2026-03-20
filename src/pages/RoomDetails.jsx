@@ -8,6 +8,7 @@ const getFallbackAvatar = (name) => {
 };
 
 const getUserId = (user) => user?.id || user?.user_id || null;
+const NEAR_BOTTOM_THRESHOLD = 120;
 
 function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicProfile }) {
   const { id } = useParams();
@@ -23,10 +24,19 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
   const wsRef = useRef(null);
   const messageListRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const shouldScrollOnNextRenderRef = useRef(false);
+  const scrollBehaviorRef = useRef('auto');
 
   const currentUsername = currentUser?.username || '';
+  const currentUserId = getUserId(currentUser);
   const roomOwner = room?.owner?.username || '';
   const canAccessRoom = Boolean(room?.is_member ?? room?.members?.some((member) => member?.user?.username === currentUsername && !member?.leftDate));
+
+  const sortedMessages = useMemo(
+    () => [...messages].sort((a, b) => new Date(a.sent_at || 0).getTime() - new Date(b.sent_at || 0).getTime()),
+    [messages],
+  );
 
   const handleOpenProfile = (user) => {
     const userId = getUserId(user);
@@ -36,6 +46,18 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     }
 
     onOpenPublicProfile?.(userId, user?.username);
+  };
+
+  const isNearBottom = () => {
+    const node = messageListRef.current;
+    if (!node) return true;
+    const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
+    return distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
+  };
+
+  const scheduleScrollToBottom = (behavior = 'auto') => {
+    shouldScrollOnNextRenderRef.current = true;
+    scrollBehaviorRef.current = behavior;
   };
 
   const loadRoom = async () => {
@@ -55,6 +77,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       const messageData = await getRoomMessages(id);
       setMessages(messageData || []);
+      scheduleScrollToBottom('auto');
       onApiStatusChange?.('connected');
     } catch (err) {
       setError(err.message || 'Failed to load room');
@@ -71,19 +94,15 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
   }, [id]);
 
   useEffect(() => {
-    if (loading) return;
-    const node = messageListRef.current;
-    if (node) node.scrollTop = node.scrollHeight;
-  }, [loading, id]);
+    if (!shouldScrollOnNextRenderRef.current) return undefined;
 
-  useEffect(() => {
-    const node = messageListRef.current;
-    if (!node) return;
-    const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
-    if (distanceFromBottom < 120) {
-      node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
-    }
-  }, [messages]);
+    const rafId = window.requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: scrollBehaviorRef.current, block: 'end' });
+      shouldScrollOnNextRenderRef.current = false;
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [sortedMessages]);
 
   useEffect(() => {
     if (!id || !canAccessRoom) return undefined;
@@ -98,15 +117,19 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     socket.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
+        const incoming = parsed?.type === 'chat_message' && parsed?.message ? parsed.message : parsed?.content ? parsed : null;
 
-        if (parsed?.type === 'chat_message' && parsed?.message) {
-          const incoming = parsed.message;
-          setMessages((prev) => (incoming?.id && prev.some((msg) => msg.id === incoming.id) ? prev : [...prev, incoming]));
-          return;
-        }
+        if (!incoming) return;
 
-        if (parsed?.content) {
-          setMessages((prev) => [...prev, parsed]);
+        const senderId = getUserId(incoming?.user);
+        const senderUsername = incoming?.user?.username || '';
+        const isOwnMessage = (currentUserId && senderId && senderId === currentUserId) || (currentUsername && senderUsername === currentUsername);
+        const shouldAutoScroll = isOwnMessage || isNearBottom();
+
+        setMessages((prev) => (incoming?.id && prev.some((msg) => msg.id === incoming.id) ? prev : [...prev, incoming]));
+
+        if (shouldAutoScroll) {
+          scheduleScrollToBottom(isOwnMessage ? 'smooth' : 'auto');
         }
       } catch (err) {
         window.console.error('[RoomDetails] failed to parse websocket payload:', err);
@@ -128,7 +151,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
         socket.close();
       }
     };
-  }, [id, canAccessRoom]);
+  }, [id, canAccessRoom, currentUserId, currentUsername]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -144,6 +167,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     }
 
     wsRef.current.send(JSON.stringify({ content: trimmed }));
+    scheduleScrollToBottom('smooth');
     setContent('');
   };
 
@@ -177,11 +201,6 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     }
   };
 
-  const sortedMessages = useMemo(
-    () => [...messages].sort((a, b) => new Date(a.sent_at || 0).getTime() - new Date(b.sent_at || 0).getTime()),
-    [messages],
-  );
-
   const roomInitial = (room?.name || 'R').charAt(0).toUpperCase();
 
   if (loading) {
@@ -196,7 +215,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       {!canAccessRoom ? (
         <div className="container-fluid py-4 px-3 px-lg-4">
-          <div className="room-locked-state card border-0 shadow-sm rounded-4 p-4 p-lg-5 text-center mx-auto">
+          <div className="room-locked-state card border-0 shadow-sm rounded-4 p-4 p-lg-5 text-center mx-auto soft-enter-panel">
             <div className="display-5 mb-3"><i className={`bi ${room?.private ? 'bi-lock-fill' : 'bi-door-open-fill'}`} /></div>
             <h2 className="mb-3">Access required</h2>
             <p className="text-secondary mb-4">{lockedMessage}</p>
@@ -226,7 +245,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
               const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
 
               return (
-                <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex chat-message-row ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                <div key={`${message.id || index}-${message.sent_at || index}`} className={`d-flex chat-message-row chat-message-appear ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
                   <div className="d-flex gap-2 chat-message-wrap">
                     {!isCurrentUser && (
                       <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
@@ -241,7 +260,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
                       </button>
                     )}
 
-                    <div className={`card border-0 p-2 px-3 chat-message-bubble ${isCurrentUser ? 'chat-own-message' : ''}`}>
+                    <div className={`card border-0 p-2 px-3 chat-message-bubble ${isCurrentUser ? 'chat-message mine' : 'chat-message other'}`}>
                       <div className="d-flex align-items-start justify-content-between gap-2">
                         <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
                           {messageUsername || 'User'}
@@ -262,7 +281,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
                           </div>
                         )}
                       </div>
-                      <div className="mt-1" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message?.content || ''}</div>
+                      <div className="chat-message-content mt-1" dir="auto">{message?.content || ''}</div>
                       <div className="small text-secondary mt-2">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
                     </div>
 
@@ -284,6 +303,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
             })}
 
             {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
+            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
 
           <form className="chat-input-bar" onSubmit={handleSend}>
@@ -296,6 +316,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
                 className="form-control"
                 placeholder="Write a message..."
                 value={content}
+                dir="auto"
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -313,11 +334,11 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       <div className="modal fade" id="editMessageModal" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4">
+          <div className="modal-content rounded-4 soft-enter-panel">
             <div className="modal-header"><h5 className="modal-title">Edit message</h5><button className="btn-close" data-bs-dismiss="modal" /></div>
             <form onSubmit={handleEditMessage}>
               <div className="modal-body">
-                <textarea className="form-control" rows="4" value={editingMessage?.content || ''} onChange={(e) => setEditingMessage((prev) => ({ ...prev, content: e.target.value }))} />
+                <textarea className="form-control" rows="4" dir="auto" value={editingMessage?.content || ''} onChange={(e) => setEditingMessage((prev) => ({ ...prev, content: e.target.value }))} />
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -330,7 +351,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       <div className="modal fade" id="deleteMessageModal" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4">
+          <div className="modal-content rounded-4 soft-enter-panel">
             <div className="modal-header"><h5 className="modal-title">Delete message</h5><button className="btn-close" data-bs-dismiss="modal" /></div>
             <div className="modal-body">Are you sure you want to delete this message?</div>
             <div className="modal-footer">

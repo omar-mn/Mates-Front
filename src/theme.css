@@ -825,3 +825,225 @@ textarea::placeholder {
     max-width: 92%;
   }
 }
+
+.page-transition {
+  min-height: inherit;
+  animation: pageFadeIn 200ms ease-out;
+}
+
+.detail-page-shell,
+.soft-enter-panel {
+  animation: panelSoftEnter 220ms ease-out;
+  transform-origin: top center;
+}
+
+.room-card-appear {
+  opacity: 0;
+  animation: fadeUpIn 240ms ease-out forwards;
+}
+
+.joined-rooms-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  overflow: hidden;
+}
+
+.joined-room-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem 0.9rem;
+  text-decoration: none;
+  color: var(--text);
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.joined-room-item + .joined-room-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.joined-room-item:hover {
+  background: rgba(168, 85, 247, 0.1);
+  transform: translateX(2px);
+}
+
+.joined-room-item.active {
+  background: rgba(168, 85, 247, 0.18);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.joined-room-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.joined-room-name {
+  font-weight: 600;
+}
+
+.joined-room-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.joined-room-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.joined-room-privacy-badge.is-private {
+  color: #ffc2d0;
+  background: rgba(239, 71, 111, 0.12);
+}
+
+.joined-room-privacy-badge.is-public {
+  color: #bfe4ff;
+  background: rgba(77, 171, 247, 0.1);
+}
+
+.chat-shell {
+  isolation: isolate;
+}
+
+.chat-body {
+  scroll-behavior: smooth;
+}
+
+.chat-message-row {
+  margin-bottom: 0.15rem;
+}
+
+.chat-message-appear {
+  animation: messageIn 180ms ease-out;
+}
+
+.chat-message {
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
+}
+
+.chat-message.mine {
+  align-self: flex-end;
+  background: linear-gradient(145deg, rgba(70, 34, 124, 0.94), rgba(47, 24, 85, 0.96));
+  border-color: rgba(176, 109, 255, 0.36);
+  box-shadow: 0 10px 20px rgba(33, 14, 59, 0.3), 0 0 0 1px rgba(176, 109, 255, 0.08);
+}
+
+.chat-message.other {
+  background: linear-gradient(160deg, rgba(27, 27, 40, 0.96), rgba(18, 18, 27, 0.94));
+}
+
+.chat-message-content {
+  unicode-bidi: plaintext;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.75;
+}
+
+.chat-input-bar .form-control {
+  unicode-bidi: plaintext;
+}
+
+.about-placeholder-card {
+  max-width: 720px;
+}
+
+.placeholder-page-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 0.9rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #e7d4ff;
+  background: rgba(176, 109, 255, 0.14);
+  border: 1px solid rgba(176, 109, 255, 0.22);
+}
+
+.app-sidebar,
+.app-main,
+.sidebar-link,
+.sidebar-button,
+.sidebar-collapse-button,
+.joined-room-item,
+.joined-room-card,
+.chat-header-bar,
+.chat-message-bubble,
+.modal-content,
+.public-profile-shell {
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelSoftEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

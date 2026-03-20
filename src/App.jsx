@@ -162,6 +162,7 @@ function App() {
                     refreshRoomsRequest={refreshRoomsRequest}
                     onApiStatusChange={setApiStatus}
                     showToast={showToast}
+                    onJoinedRoomsChange={setJoinedRooms}
                   />
                 </ProtectedRoute>
               )}

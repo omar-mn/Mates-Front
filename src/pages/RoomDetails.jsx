@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteMessage, getRoomDetails, getRoomMessages, getRoomSocketUrl, resolveMediaUrl, updateMessage } from '../api';
 
@@ -25,6 +25,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
   const wsRef = useRef(null);
   const messageListRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const hasLoadedRoomRef = useRef(false);
   const shouldScrollOnNextRenderRef = useRef(false);
   const scrollBehaviorRef = useRef('auto');
 
@@ -60,6 +61,11 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     scrollBehaviorRef.current = behavior;
   };
 
+  const scheduleInitialScrollToBottom = () => {
+    hasLoadedRoomRef.current = false;
+    scheduleScrollToBottom('auto');
+  };
+
   const loadRoom = async () => {
     setLoading(true);
     setError('');
@@ -77,7 +83,7 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
 
       const messageData = await getRoomMessages(id);
       setMessages(messageData || []);
-      scheduleScrollToBottom('auto');
+      scheduleInitialScrollToBottom();
       onApiStatusChange?.('connected');
     } catch (err) {
       setError(err.message || 'Failed to load room');
@@ -93,16 +99,18 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
     loadRoom();
   }, [id]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!shouldScrollOnNextRenderRef.current) return undefined;
 
     const rafId = window.requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: scrollBehaviorRef.current, block: 'end' });
+      const behavior = hasLoadedRoomRef.current ? scrollBehaviorRef.current : 'auto';
+      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
       shouldScrollOnNextRenderRef.current = false;
+      hasLoadedRoomRef.current = true;
     });
 
     return () => window.cancelAnimationFrame(rafId);
-  }, [sortedMessages]);
+  }, [sortedMessages, room?.id]);
 
   useEffect(() => {
     if (!id || !canAccessRoom) return undefined;

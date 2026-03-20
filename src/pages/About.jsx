@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import sticker from './st.webp';
 
 const featureCards = [
   {
@@ -45,7 +46,7 @@ function About() {
         <div className="row g-4 align-items-stretch">
           <div className="col-12 col-xl-7">
             <div className="about-story-panel h-100">
-              <div className="placeholder-page-label about-story-label">Story / Note</div>
+              <div className="placeholder-page-label about-story-label">كانت معاناة و رب العباد</div>
               <div className="about-story-copy" dir="rtl">
                 {'اخويا اليوزر الرائع , سعيد بوصولك للصفحة دي  اتمنى تكون مبسوط معانا فال app الطرش جدا دا\n'
                   + 'بص بقا يفنان هدفي من البتاع دا كان مجرد اني اتعلم باك و بس اصلا ف هو متوقعتش انه يوسع مني للصورة دي يعني انا اصلا بدأته و مكنتش اعرف يعني ايه http req حتى , فكونه وصل للمرحلة دي بعد معاناة شهرين تقريبا ف دا انجاز رائع موت\n'
@@ -59,13 +60,9 @@ function About() {
 
           <div className="col-12 col-xl-5">
             <div className="about-sticker-slot h-100">
-              <div className="about-sticker-chip">Sticker Placeholder</div>
+              <div className="about-sticker-chip">انا ف قمة السعادة</div>
               <div className="about-sticker-frame">
-                <i className="bi bi-emoji-smile about-sticker-icon" aria-hidden="true" />
-                <h3 className="h5 mb-2">Add sticker here later</h3>
-                <p className="text-secondary mb-0">
-                  A dedicated media slot for a funny image, meme, or mascot sticker whenever you are ready.
-                </p>
+                <img src={sticker} alt="sticker" className="about-sticker-img" />
               </div>
             </div>
           </div>

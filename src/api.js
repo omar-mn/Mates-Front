@@ -2,7 +2,7 @@ const BACKEND_ORIGIN = 'https://unisotropous-lauren-persuadably.ngrok-free.dev';
 const DEFAULT_API_BASE = `${BACKEND_ORIGIN}/api/`;
 const DEFAULT_WS_BASE = 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
 const FALLBACK_AVATAR = 'https://ui-avatars.com/api/?name=User&background=6f33df&color=fff';
-const FALLBACK_BANNER = 'https://images.unsplash.com/photo-1522199755839-a2bacb67c546?auto=format&fit=crop&w=1200&q=80';
+const FALLBACK_BANNER = 'https://i.ibb.co/PZ2kM0Rd/mates-banner.png';
 
 const normalizeBase = (baseUrl, fallback) => {
   const value = baseUrl || fallback;

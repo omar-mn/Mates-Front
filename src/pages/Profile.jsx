@@ -10,6 +10,7 @@ import {
   resolveMediaUrl,
   updateCurrentUser,
 } from '../api';
+import bannerimage from './matesbanner.png'
 
 const getFallbackAvatar = (name) => {
   const safeName = encodeURIComponent(name || 'User');
@@ -127,7 +128,7 @@ function Profile({ currentUser, setCurrentUser, showToast, onJoinedRoomsChange }
 
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 soft-enter-panel">
         <img
-          src={resolveMediaUrl(profile?.profile_banner, getDefaultBanner(profile?.username))}
+          src={bannerimage}
           onError={(e) => { e.currentTarget.src = getDefaultBanner(profile?.username); }}
           alt="profile banner"
           style={{ height: '200px', objectFit: 'cover' }}

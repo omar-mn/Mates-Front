@@ -11,7 +11,7 @@ const getFallbackAvatar = (name) => {
 
 const getActiveMembers = (members = []) => members.filter((member) => !member?.leftDate);
 
-function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast }) {
+function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRequest, onApiStatusChange, showToast, onJoinedRoomsChange }) {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,6 +182,7 @@ function Home({ currentUser, selectedCategory, createRoomRequest, refreshRoomsRe
     try {
       await deleteRoom(deletingRoom.id);
       setRooms((prev) => prev.filter((room) => room.id !== deletingRoom.id));
+      onJoinedRoomsChange?.((prev) => prev.filter((item) => item?.room?.id !== deletingRoom.id && item?.id !== deletingRoom.id));
       window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteRoomModal')).hide();
       showToast?.('Room deleted successfully.', 'success');
     } catch (err) {

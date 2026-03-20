@@ -607,7 +607,7 @@ textarea::placeholder {
   }
 
   .chat-message-wrap {
-    max-width: 85%;
+    max-width: 84%;
   }
 
   .chat-message-bubble {
@@ -784,12 +784,12 @@ textarea::placeholder {
 }
 
 .chat-message-wrap {
-  max-width: min(900px, 70%);
+  max-width: min(900px, 72%);
 }
 
 .chat-message-bubble {
   background: linear-gradient(160deg, rgba(27, 27, 40, 0.96), rgba(18, 18, 27, 0.94));
-  padding: 6px 10px !important;
+  padding: 8px 12px !important;
 }
 
 @media (max-width: 991.98px) {
@@ -831,7 +831,7 @@ textarea::placeholder {
 }
 
   .chat-message-wrap {
-    max-width: 85%;
+    max-width: 84%;
   }
 }
 
@@ -959,20 +959,41 @@ textarea::placeholder {
   border-bottom-left-radius: 6px;
 }
 
+.chat-message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-message-author {
+  min-width: 0;
+  text-align: start;
+}
+
+.chat-message-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .chat-message-content {
+  margin-top: 4px;
   unicode-bidi: plaintext;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.55;
+  line-height: 1.5;
+  text-align: start;
 }
 
 .chat-message-meta {
   font-size: 0.7rem;
   opacity: 0.68;
-  text-align: right;
-  margin-top: 0.35rem;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .chat-input-bar .form-control {

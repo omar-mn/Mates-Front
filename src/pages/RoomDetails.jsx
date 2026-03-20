@@ -296,29 +296,31 @@ window.requestAnimationFrame(() => {
                       </button>
                     )}
 
-                    <div className={`card border-0 p-2 px-3 chat-message-bubble ${isCurrentUser ? 'chat-message mine' : 'chat-message other'}`}>
-                      <div className="d-flex align-items-start justify-content-between gap-2">
-                        <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
+                    <div className={`card border-0 chat-message-bubble ${isCurrentUser ? 'chat-message mine' : 'chat-message other'}`}>
+                      <div className="chat-message-header">
+                        <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger chat-message-author" onClick={() => handleOpenProfile(messageUser)}>
                           {messageUsername || 'User'}
                         </button>
-                        {(canEdit || canDelete) && (
-                          <div className="dropdown">
-                            <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
-                            <ul className="dropdown-menu dropdown-menu-end">
-                              {canEdit && <li><button className="dropdown-item" onClick={() => {
-                                setEditingMessage({ id: message.id, content: message.content || '' });
-                                window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
-                              }}>Edit message</button></li>}
-                              {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
-                                setDeletingMessage(message);
-                                window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
-                              }}>Delete message</button></li>}
-                            </ul>
-                          </div>
-                        )}
+                        <div className="chat-message-header-actions">
+                          <div className="chat-message-meta small text-secondary">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                          {(canEdit || canDelete) && (
+                            <div className="dropdown">
+                              <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
+                              <ul className="dropdown-menu dropdown-menu-end">
+                                {canEdit && <li><button className="dropdown-item" onClick={() => {
+                                  setEditingMessage({ id: message.id, content: message.content || '' });
+                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
+                                }}>Edit message</button></li>}
+                                {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
+                                  setDeletingMessage(message);
+                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
+                                }}>Delete message</button></li>}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="chat-message-content mt-1" dir="auto">{message?.content || ''}</div>
-                      <div className="chat-message-meta small text-secondary">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                      <div className="chat-message-content" dir="auto">{message?.content || ''}</div>
                     </div>
 
                     {isCurrentUser && (

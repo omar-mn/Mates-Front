@@ -768,19 +768,51 @@ textarea::placeholder {
 }
 
 .chat-body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem 1.25rem;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.9rem;
 }
 
 .chat-input-bar {
+  flex-shrink: 0;
   position: sticky;
   bottom: 0;
   border-top: 1px solid var(--border);
   background: #151521;
   padding: 0.9rem 1.25rem 1rem;
+}
+
+.chat-empty-state {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.chat-empty-state-card {
+  width: min(100%, 320px);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.chat-empty-state-title {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chat-empty-state-text {
+  color: var(--muted);
 }
 
 .chat-message-wrap {

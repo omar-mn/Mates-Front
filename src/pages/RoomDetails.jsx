@@ -273,74 +273,81 @@ window.requestAnimationFrame(() => {
           </button>
 
           <div className="chat-body" ref={messageListRef}>
-            {sortedMessages.map((message, index) => {
-              const messageUser = message?.user || {};
-              const messageUsername = messageUser?.username || '';
-              const isCurrentUser = currentUsername && messageUsername === currentUsername;
-              const canEdit = isCurrentUser;
-              const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
+            {sortedMessages.length ? (
+              sortedMessages.map((message, index) => {
+                const messageUser = message?.user || {};
+                const messageUsername = messageUser?.username || '';
+                const isCurrentUser = currentUsername && messageUsername === currentUsername;
+                const canEdit = isCurrentUser;
+                const canDelete = isCurrentUser || (currentUsername && currentUsername === roomOwner);
 
-              return (
-                <div key={message.id || index} className={`d-flex chat-message-row chat-message-appear ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
-                  <div className="d-flex gap-2 chat-message-wrap">
-                    {!isCurrentUser && (
-                      <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
-                        <img
-                          src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
-                          alt="user"
-                          width="34"
-                          height="34"
-                          className="rounded-circle border"
-                        />
-                      </button>
-                    )}
-
-                    <div className={`card border-0 chat-message-bubble ${isCurrentUser ? 'chat-message mine' : 'chat-message other'}`}>
-                      <div className="chat-message-header">
-                        <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger chat-message-author" onClick={() => handleOpenProfile(messageUser)}>
-                          {messageUsername || 'User'}
+                return (
+                  <div key={message.id || index} className={`d-flex chat-message-row chat-message-appear ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`}>
+                    <div className="d-flex gap-2 chat-message-wrap">
+                      {!isCurrentUser && (
+                        <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
+                          <img
+                            src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
+                            alt="user"
+                            width="34"
+                            height="34"
+                            className="rounded-circle border"
+                          />
                         </button>
-                        <div className="chat-message-header-actions">
-                          <div className="chat-message-meta small text-secondary">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
-                          {(canEdit || canDelete) && (
-                            <div className="dropdown">
-                              <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
-                              <ul className="dropdown-menu dropdown-menu-end">
-                                {canEdit && <li><button className="dropdown-item" onClick={() => {
-                                  setEditingMessage({ id: message.id, content: message.content || '' });
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
-                                }}>Edit message</button></li>}
-                                {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
-                                  setDeletingMessage(message);
-                                  window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
-                                }}>Delete message</button></li>}
-                              </ul>
-                            </div>
-                          )}
+                      )}
+
+                      <div className={`card border-0 chat-message-bubble ${isCurrentUser ? 'chat-message mine' : 'chat-message other'}`}>
+                        <div className="chat-message-header">
+                          <button type="button" className="small text-secondary fw-semibold btn p-0 border-0 bg-transparent public-profile-trigger chat-message-author" onClick={() => handleOpenProfile(messageUser)}>
+                            {messageUsername || 'User'}
+                          </button>
+                          <div className="chat-message-header-actions">
+                            <div className="chat-message-meta small text-secondary">{message?.sent_at ? new Date(message.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                            {(canEdit || canDelete) && (
+                              <div className="dropdown">
+                                <button className="btn btn-sm btn-outline-secondary py-0 px-1" data-bs-toggle="dropdown"><i className="bi bi-three-dots" /></button>
+                                <ul className="dropdown-menu dropdown-menu-end">
+                                  {canEdit && <li><button className="dropdown-item" onClick={() => {
+                                    setEditingMessage({ id: message.id, content: message.content || '' });
+                                    window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).show();
+                                  }}>Edit message</button></li>}
+                                  {canDelete && <li><button className="dropdown-item text-danger" onClick={() => {
+                                    setDeletingMessage(message);
+                                    window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).show();
+                                  }}>Delete message</button></li>}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        <div className="chat-message-content" dir="auto">{message?.content || ''}</div>
                       </div>
-                      <div className="chat-message-content" dir="auto">{message?.content || ''}</div>
+
+                      {isCurrentUser && (
+                        <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
+                          <img
+                            src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
+                            alt="user"
+                            width="34"
+                            height="34"
+                            className="rounded-circle border"
+                          />
+                        </button>
+                      )}
                     </div>
-
-                    {isCurrentUser && (
-                      <button type="button" className="btn p-0 border-0 bg-transparent align-self-end public-profile-trigger" onClick={() => handleOpenProfile(messageUser)}>
-                        <img
-                          src={resolveMediaUrl(messageUser?.profileImage, getFallbackAvatar(messageUser?.username))}
-                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(messageUser?.username); }}
-                          alt="user"
-                          width="34"
-                          height="34"
-                          className="rounded-circle border"
-                        />
-                      </button>
-                    )}
                   </div>
+                );
+              })
+            ) : (
+              <div className="chat-empty-state" role="status" aria-live="polite">
+                <div className="chat-empty-state-card">
+                  <p className="chat-empty-state-title mb-1">No messages yet.</p>
+                  <p className="chat-empty-state-text mb-0">Start the conversation.</p>
                 </div>
-              );
-            })}
-
-            {!sortedMessages.length && <div className="alert alert-info mb-0">No messages yet.</div>}
+              </div>
+            )}
           </div>
 
           <form className="chat-input-bar" onSubmit={handleSend}>

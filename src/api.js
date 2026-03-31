@@ -1,6 +1,9 @@
-const BACKEND_ORIGIN = 'https://unisotropous-lauren-persuadably.ngrok-free.dev';
-const DEFAULT_API_BASE = `${BACKEND_ORIGIN}/api/`;
-const DEFAULT_WS_BASE = 'wss://unisotropous-lauren-persuadably.ngrok-free.dev/ws/';
+const ENVIRONMENT = import.meta.env.VITE_ENV
+
+const BACKEND_ORIGIN = ENVIRONMENT === 'prod' ? 'unisotropous-lauren-persuadably.ngrok-free.dev' : '127.0.0.1:8000';
+const DEFAULT_API_BASE = `http://${BACKEND_ORIGIN}/api/`;
+const DEFAULT_WS_BASE = `ws://${BACKEND_ORIGIN}/ws/`;
+
 const FALLBACK_AVATAR = 'https://ui-avatars.com/api/?name=User&background=6f33df&color=fff';
 const FALLBACK_BANNER = 'https://i.ibb.co/PZ2kM0Rd/mates-banner.png';
 

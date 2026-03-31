@@ -1,0 +1,8 @@
+version: "3"
+services:
+  react:
+    environment:
+      - VITE_ENV=dev
+    volumes:
+      - .:/mates_frontend:ro
+      - /mates_frontend/node_modules

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { deleteMessage, getRoomDetails, getRoomMessages, getRoomSocketUrl, resolveMediaUrl, updateMessage } from '../api';
 
 const getFallbackAvatar = (name) => {
@@ -12,10 +12,16 @@ const NEAR_BOTTOM_THRESHOLD = 120;
 
 function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicProfile }) {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [room, setRoom] = useState(null);
+  const roomId = typeof id === 'string' ? id.trim() : '';
+  const isValidRoomId = Boolean(roomId);
+  const preloadedRoom = location.state?.room;
+  const canUsePreloadedRoom = Boolean(preloadedRoom && String(preloadedRoom.id) === roomId);
+
+  const [room, setRoom] = useState(canUsePreloadedRoom ? preloadedRoom : null);
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isValidRoomId);
   const [error, setError] = useState('');
   const [content, setContent] = useState('');
   const [socketState, setSocketState] = useState('connecting');
@@ -28,7 +34,10 @@ function RoomDetails({ onApiStatusChange, showToast, currentUser, onOpenPublicPr
   const currentUsername = currentUser?.username || '';
   const currentUserId = getUserId(currentUser);
   const roomOwner = room?.owner?.username || '';
-  const canAccessRoom = Boolean(room?.is_member ?? room?.members?.some((member) => member?.user?.username === currentUsername && !member?.leftDate));
+  const canAccessRoom = Boolean(
+    room?.is_member
+      ?? (Array.isArray(room?.members) && room.members.some((member) => member?.user?.username === currentUsername && !member?.leftDate)),
+  );
 
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => new Date(a.sent_at || 0).getTime() - new Date(b.sent_at || 0).getTime()),
@@ -70,11 +79,19 @@ const scrollToBottomSmooth = () => {
 
 
   const loadRoom = async () => {
+    if (!isValidRoomId) {
+      setLoading(false);
+      setError('Invalid room URL.');
+      setMessages([]);
+      setRoom(null);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const roomData = await getRoomDetails(id);
+      const roomData = await getRoomDetails(roomId);
       setRoom(roomData || null);
 
       if (roomData?.is_member === false) {
@@ -84,7 +101,7 @@ const scrollToBottomSmooth = () => {
         return;
       }
 
-      const messageData = await getRoomMessages(id);
+      const messageData = await getRoomMessages(roomId);
       setMessages(messageData || []);
       onApiStatusChange?.('connected');
     } catch (err) {
@@ -99,7 +116,7 @@ const scrollToBottomSmooth = () => {
 
   useEffect(() => {
     loadRoom();
-  }, [id]);
+  }, [roomId]);
 
   useEffect(() => {
   if (loading) return;
@@ -117,7 +134,7 @@ const scrollToBottomSmooth = () => {
   }, 0);
 
   return () => clearTimeout(t1);
-}, [loading, id, canAccessRoom, sortedMessages.length]);
+}, [loading, roomId, canAccessRoom, sortedMessages.length]);
 
 useEffect(() => {
   if (loading) return;
@@ -135,9 +152,9 @@ useEffect(() => {
 }, [sortedMessages, loading]);
 
   useEffect(() => {
-    if (!id || !canAccessRoom) return undefined;
+    if (!roomId || !canAccessRoom) return undefined;
 
-    const socket = new window.WebSocket(getRoomSocketUrl(id));
+    const socket = new window.WebSocket(getRoomSocketUrl(roomId));
     wsRef.current = socket;
 
     socket.onopen = () => {
@@ -188,7 +205,7 @@ window.requestAnimationFrame(() => {
         socket.close();
       }
     };
-  }, [id, canAccessRoom, currentUserId, currentUsername]);
+  }, [roomId, canAccessRoom, currentUserId, currentUsername]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -215,7 +232,7 @@ window.requestAnimationFrame(() => {
     }
 
     try {
-      const updated = await updateMessage(id, editingMessage.id, editingMessage.content.trim());
+      const updated = await updateMessage(roomId, editingMessage.id, editingMessage.content.trim());
       setMessages((prev) => prev.map((msg) => (msg.id === editingMessage.id ? { ...msg, ...updated, content: updated.content || editingMessage.content.trim() } : msg)));
       window.bootstrap.Modal.getOrCreateInstance(document.getElementById('editMessageModal')).hide();
       showToast?.('Message updated.', 'success');
@@ -228,7 +245,7 @@ window.requestAnimationFrame(() => {
     if (!deletingMessage) return;
 
     try {
-      await deleteMessage(id, deletingMessage.id);
+      await deleteMessage(roomId, deletingMessage.id);
       setMessages((prev) => prev.filter((msg) => msg.id !== deletingMessage.id));
       window.bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteMessageModal')).hide();
       showToast?.('Message deleted.', 'success');
@@ -243,11 +260,27 @@ window.requestAnimationFrame(() => {
     return <div className="container-fluid py-4 px-3 px-lg-4"><div className="text-center py-5"><div className="spinner-border" /></div></div>;
   }
 
+  if (!isValidRoomId) {
+    return (
+      <div className="container-fluid py-4 px-3 px-lg-4">
+        <div className="alert alert-danger d-flex align-items-center justify-content-between gap-3">
+          <span>Invalid room URL.</span>
+          <button className="btn btn-sm btn-outline-danger" onClick={() => navigate('/home')}>Back to rooms</button>
+        </div>
+      </div>
+    );
+  }
+
   const lockedMessage = room?.private ? 'You need to send a join request first.' : 'You need to join this room first.';
 
   return (
     <div className="room-page-layout">
-      {error && <div className="alert alert-danger m-3">{error}</div>}
+      {error && (
+        <div className="alert alert-danger m-3 d-flex align-items-center justify-content-between gap-3">
+          <span>{error}</span>
+          <button className="btn btn-sm btn-outline-danger" onClick={loadRoom}>Retry</button>
+        </div>
+      )}
 
       {!canAccessRoom ? (
         <div className="container-fluid py-4 px-3 px-lg-4">
@@ -257,13 +290,13 @@ window.requestAnimationFrame(() => {
             <p className="text-secondary mb-4">{lockedMessage}</p>
             <div className="d-flex justify-content-center gap-2 flex-wrap">
               <button className="btn btn-outline-secondary" onClick={() => navigate('/home')}>Back to rooms</button>
-              <button className="btn btn-primary" onClick={() => navigate(`/room/${id}/info`)}>Open Room Info</button>
+              <button className="btn btn-primary" onClick={() => navigate(`/room/${roomId}/info`)}>Open Room Info</button>
             </div>
           </div>
         </div>
       ) : (
         <div className="chat-shell">
-          <button className="chat-header-bar" onClick={() => navigate(`/room/${id}/info`)}>
+          <button className="chat-header-bar" onClick={() => navigate(`/room/${roomId}/info`)}>
             <div className="chat-room-avatar" aria-hidden="true">{roomInitial}</div>
             <div className="d-flex flex-column text-start">
               <span className="chat-header-label">Room</span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { getCurrentUser, getJoinedRooms } from './api';
 import AppNavbar from './components/AppNavbar';
 import PublicProfileModal from './components/PublicProfileModal';
@@ -20,6 +20,12 @@ import Updates from './pages/Updates';
 function ProtectedRoute({ isLoggedIn, children }) {
   if (!isLoggedIn) return <Navigate to="/login" replace />;
   return children;
+}
+
+function LegacyChatRedirect() {
+  const { id } = useParams();
+  if (!id) return <Navigate to="/home" replace />;
+  return <Navigate to={`/room/${id}`} replace />;
 }
 
 function App() {
@@ -181,6 +187,7 @@ function App() {
                 </ProtectedRoute>
               )}
             />
+            <Route path="/chat/:id" element={<ProtectedRoute isLoggedIn={isLoggedIn}><LegacyChatRedirect /></ProtectedRoute>} />
             <Route
               path="/room/:id/info"
               element={(

@@ -1,6 +1,6 @@
-FROM node:22.19-alpine
+FROM node:22.19-alpine AS base
 
-WORKDIR /mates_frontend
+WORKDIR /app
 
 COPY package.json .
 
@@ -8,7 +8,13 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
 
+FROM nginx:stable-alpine3.23
 
-CMD [ "npm" , "run" , "dev" ]
+COPY nginx.conf /etc/nginx/
+COPY --from=base /app/dist /var/mates/dist
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

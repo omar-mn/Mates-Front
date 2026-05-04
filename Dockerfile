@@ -15,6 +15,4 @@ FROM nginx:stable-alpine3.23
 COPY nginx.conf /etc/nginx/
 COPY --from=base /app/dist /var/mates/dist
 
-EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
